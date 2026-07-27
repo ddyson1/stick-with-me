@@ -1,0 +1,192 @@
+/* =========================================================================
+   stick with me — a wall of notes from strangers
+   ========================================================================= */
+
+@font-face {
+  font-family: "Caveat";
+  src: url("fonts/caveat-400.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Special Elite";
+  src: url("fonts/specialelite-400.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  --hand: "Caveat", cursive;
+  --type: "Special Elite", "Courier New", monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --amber: #e5a63c;
+  --amber-deep: #b3781c;
+
+  /* night: a plaster wall lit by one lamp */
+  --wall-a: #2e2b27;
+  --wall-b: #262421;
+  --glow: rgba(255, 244, 214, 0.10);
+  --chrome: #cbc4b2;
+  --chrome-dim: #9d9684;
+  --chrome-faint: #7c766a;
+  --note-ink: #3a3527;
+  --note-shadow: rgba(0, 0, 0, 0.35);
+  --blank-line: rgba(255, 255, 255, 0.25);
+  --blank-bg: rgba(255, 255, 255, 0.07);
+}
+:root[data-theme="day"] {
+  --wall-a: #ddd6c6;
+  --wall-b: #d3cbba;
+  --glow: rgba(255, 255, 255, 0.35);
+  --chrome: #4c463a;
+  --chrome-dim: #6e6656;
+  --chrome-faint: #8d8471;
+  --note-shadow: rgba(90, 70, 30, 0.28);
+  --blank-line: rgba(60, 50, 30, 0.3);
+  --blank-bg: rgba(255, 255, 255, 0.25);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100svh;
+  background:
+    radial-gradient(120% 80% at 50% 0%, var(--glow), transparent 55%),
+    linear-gradient(var(--wall-a), var(--wall-b));
+  color: var(--chrome);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background 500ms ease;
+}
+/* plaster grain */
+body::before {
+  content: "";
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ---- header ---- */
+.hdr { position: relative; z-index: 1; text-align: center; padding: 1.6rem 1rem 0.6rem; }
+.hdr .t {
+  font-family: var(--type);
+  font-size: clamp(0.85rem, 2.4vw, 1.05rem);
+  letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--chrome); margin: 0;
+}
+.hdr .p { font-family: var(--hand); font-size: 1.15rem; color: var(--chrome-dim); margin: 0.3rem 0 0; }
+.hdr .p .dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--amber); margin-right: 0.45em;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: .4 } 50% { opacity: 1 } }
+.hdr .say { font-family: var(--hand); font-size: 1.05rem; color: var(--amber); min-height: 1.4em; margin: 0.2rem 0 0; }
+
+.ops { position: fixed; right: 1.2rem; top: 1.2rem; z-index: 5; display: flex; gap: 0.9rem; align-items: center; }
+.lamp {
+  width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer; padding: 0;
+  background: #ffcf5e;
+  box-shadow: 0 0 0 5px rgba(255, 207, 94, 0.2), 0 0 22px rgba(255, 190, 60, 0.45);
+  transition: box-shadow 400ms ease;
+}
+:root[data-theme="day"] .lamp { box-shadow: 0 0 0 3px rgba(255, 207, 94, 0.35); }
+.shelf-link {
+  font-family: var(--type); font-size: 0.66rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--chrome-dim); text-decoration: none;
+}
+.shelf-link:hover { color: var(--amber); }
+
+/* ---- the wall ---- */
+.wall {
+  position: relative; z-index: 1;
+  max-width: 88rem; margin: 0 auto;
+  padding: 1.6rem clamp(1rem, 3vw, 2.5rem) 4rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1.1rem;
+  align-content: start;
+}
+
+.note {
+  position: relative; aspect-ratio: 1 / 1; padding: 0.85rem 0.9rem;
+  border-radius: 2px;
+  font-family: var(--hand); font-size: 1.06rem; line-height: 1.35;
+  color: var(--note-ink);
+  overflow: hidden;
+  box-shadow: 0 6px 14px var(--note-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.note:hover { transform: scale(1.05) rotate(0deg) !important; box-shadow: 0 12px 26px var(--note-shadow); z-index: 4; }
+.note .sg {
+  position: absolute; bottom: 0.5rem; left: 0.9rem; right: 0.9rem;
+  font-size: 0.85rem; color: rgba(60, 50, 30, 0.55);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.note.longtext { font-size: 0.88rem; line-height: 1.3; }
+
+/* a note being written (someone else's) */
+.note.live {
+  background: #fff;
+  outline: 2px solid rgba(229, 166, 60, 0.6);
+  animation: glowp 2s ease-in-out infinite;
+}
+@keyframes glowp { 0%,100% { outline-color: rgba(229,166,60,.35) } 50% { outline-color: rgba(229,166,60,.95) } }
+.note .caret {
+  display: inline-block; width: 2px; height: 1em;
+  background: var(--amber-deep); vertical-align: text-bottom;
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0 } }
+.note .who {
+  position: absolute; top: 0.3rem; right: 0.5rem;
+  font-family: var(--sans); font-size: 0.56rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--amber-deep); opacity: 0.8;
+}
+
+/* your own draft */
+.note.mine { background: #fff; outline: 2px solid var(--amber); animation: none; }
+.note.mine textarea {
+  font-family: var(--hand); font-size: 1.06rem; line-height: 1.35;
+  color: var(--note-ink); background: transparent;
+  border: 0; outline: none; resize: none; padding: 0;
+  width: 100%; height: 62%;
+}
+.note.mine input {
+  font-family: var(--hand); font-size: 0.85rem; color: rgba(60,50,30,0.7);
+  background: transparent; border: 0; border-bottom: 1px dashed rgba(60,50,30,0.3);
+  outline: none; width: 70%; padding: 0.1rem 0;
+}
+.note.mine .stick {
+  position: absolute; right: 0.6rem; bottom: 0.45rem;
+  font-family: var(--sans); font-size: 0.6rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--amber-deep);
+  background: none; border: 0; cursor: pointer; padding: 0.2rem;
+}
+.note.mine .stick:hover { text-decoration: underline; }
+
+/* blank stickies */
+.note.blank {
+  background: var(--blank-bg);
+  border: 1.5px dashed var(--blank-line);
+  box-shadow: none;
+  display: grid; place-items: center;
+  color: var(--chrome-faint);
+  font-family: var(--hand); font-size: 1.1rem;
+  cursor: pointer;
+}
+.note.blank:hover { border-color: var(--amber); color: var(--amber); }
+.note.blank.quiet { cursor: default; }
+.note.blank.quiet:hover { border-color: var(--blank-line); color: var(--chrome-faint); }
+
+/* archive back-link */
+.backbar { position: relative; z-index: 1; text-align: center; padding: 0 0 3rem; }
+.backbar a { font-family: var(--type); font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--chrome-dim); text-decoration: none; }
+.backbar a:hover { color: var(--amber); }
+
+.wallerror { position: relative; z-index: 1; text-align: center; padding: 4rem 1rem; font-family: var(--hand); font-size: 1.3rem; color: var(--chrome-dim); }
+
+@media (prefers-reduced-motion: reduce) {
+  .note.live { animation: none; }
+  .hdr .p .dot { animation: none; }
+  .note .caret { animation: none; }
+}

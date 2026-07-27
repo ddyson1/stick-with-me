@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>stick with me</title>
+  <meta name="description" content="A wall of notes from strangers. Pull a blank sticky and leave one.">
+
+  <meta property="og:title" content="stick with me">
+  <meta property="og:description" content="A wall of notes from strangers. Pull a blank sticky and leave one.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://stick-with-me.com">
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/caveat-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function () {
+      var t = localStorage.getItem('swm_theme');
+      if (t === 'day') document.documentElement.setAttribute('data-theme', 'day');
+    })();
+  </script>
+</head>
+<body>
+
+  <div class="ops">
+    <a class="shelf-link" href="#" id="shelfLink" hidden>the shelf</a>
+    <button class="lamp" id="lamp" type="button" aria-label="toggle the lamp"></button>
+  </div>
+
+  <header class="hdr">
+    <p class="t">stick with me &middot; wall <span id="wallNo">001</span></p>
+    <p class="p"><span class="dot"></span><span id="pres">the lamp is warming up&hellip;</span></p>
+    <p class="say" id="say"></p>
+  </header>
+
+  <main class="wall" id="wall"></main>
+  <div class="backbar" id="backbar" hidden><a href="./">back to the open wall</a></div>
+
+  <script>
+  (function () {
+    var WORKER_URL = "https://swm-wall.plotflow-io.workers.dev";
+    var qs = new URLSearchParams(location.search);
+    var wanted = (qs.get('wall') || '001').replace(/[^0-9]/g, '') || '001';
+    var isArchive = qs.has('wall');
+
+    var wallEl = document.getElementById('wall');
+    var presEl = document.getElementById('pres');
+    var sayEl = document.getElementById('say');
+    document.getElementById('wallNo').textContent = wanted;
+    if (isArchive) document.getElementById('backbar').hidden = false;
+
+    document.getElementById('lamp').addEventListener('click', function () {
+      var day = document.documentElement.getAttribute('data-theme') === 'day';
+      if (day) { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('swm_theme', 'night'); }
+      else { document.documentElement.setAttribute('data-theme', 'day'); localStorage.setItem('swm_theme', 'day'); }
+    });
+
+    function el(tag, cls, text) {
+      var d = document.createElement(tag);
+      if (cls) d.className = cls;
+      if (text != null) d.textContent = text;
+      return d;
+    }
+    function tilt(seed) {
+      var h = 0;
+      for (var i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+      return ((h % 500) / 100 - 2.5).toFixed(2);
+    }
+    function say(msg) {
+      sayEl.textContent = msg;
+      clearTimeout(say._t);
+      say._t = setTimeout(function () { sayEl.textContent = ''; }, 4000);
+    }
+
+    /* ---- state ---- */
+    var st = null;         /* {you,id,cap,notes,drafts,presence,full,killed} */
+    var ws = null, wsOk = false, myDraft = null, pendingStart = false;
+
+    function presenceLine() {
+      if (isArchive) return 'wall ' + wanted + ', archived — ' + st.notes.length + ' notes';
+      if (!wsOk) return 'the lamp is off — the wall is read-only right now';
+      var c = st.presence || 1;
+      var who = c <= 1 ? 'you are here alone'
+        : c === 2 ? 'one stranger is here with you'
+        : (c - 1) + ' strangers are here with you';
+      return who + ' · ' + st.notes.length + ' of ' + st.cap + ' notes';
+    }
+
+    /* ---- render ---- */
+    function render() {
+      wallEl.textContent = '';
+      presEl.textContent = presenceLine();
+
+      st.notes.forEach(function (n) {
+        var d = el('div', 'note' + (n.text.length > 90 ? ' longtext' : ''));
+        d.style.background = n.color || '#ffe66b';
+        d.style.transform = 'rotate(' + tilt(n.id) + 'deg)';
+        var span = el('span', null, n.text);
+        d.appendChild(span);
+        d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
+        wallEl.appendChild(d);
+      });
+
+      (st.drafts || []).forEach(function (dr) {
+        if (myDraft && dr.gid === st.you) return; /* mine renders separately */
+        var d = el('div', 'note live');
+        d.appendChild(el('span', 'who', '✎ a stranger'));
+        var span = el('span', null, dr.text || '');
+        d.appendChild(span);
+        span.appendChild(el('span', 'caret'));
+        wallEl.appendChild(d);
+      });
+
+      if (myDraft) wallEl.appendChild(myDraft);
+
+      if (!isArchive && !st.full) {
+        var blanks = Math.min(4, st.cap - st.notes.length - (st.drafts || []).length - (myDraft ? 1 : 0));
+        for (var i = 0; i < blanks; i++) {
+          var b = el('div', 'note blank' + ((i === 0 && wsOk && !myDraft) ? '' : ' quiet'));
+          if (i === 0 && wsOk && !myDraft) {
+            b.textContent = '+ leave a note';
+            b.addEventListener('click', function () { pendingStart = true; send({ t: 'start' }); });
+          } else {
+            b.style.opacity = String(0.55 - i * 0.15);
+          }
+          wallEl.appendChild(b);
+        }
+      }
+      if (st.full && !isArchive) {
+        var f = el('div', 'note blank quiet', 'this wall is full — it will be shelved');
+        wallEl.appendChild(f);
+      }
+    }
+
+    function makeMyDraft(color) {
+      var d = el('div', 'note mine');
+      d.style.background = '#fff';
+      var ta = el('textarea');
+      ta.maxLength = 300;
+      ta.placeholder = 'say it…';
+      var sg = el('input');
+      sg.maxLength = 40; sg.type = 'text'; sg.placeholder = '— signed (optional)';
+      var stick = el('button', 'stick', 'stick it');
+      stick.type = 'button';
+      var t = null;
+      ta.addEventListener('input', function () {
+        clearTimeout(t);
+        t = setTimeout(function () { send({ t: 'write', text: ta.value }); }, 250);
+      });
+      sg.addEventListener('change', function () { send({ t: 'sign', name: sg.value }); });
+      stick.addEventListener('click', function () {
+        send({ t: 'write', text: ta.value });
+        setTimeout(function () { send({ t: 'release' }); }, 200);
+      });
+      d.appendChild(ta); d.appendChild(sg); d.appendChild(stick);
+      setTimeout(function () { ta.focus(); }, 50);
+      return d;
+    }
+
+    /* ---- live ---- */
+    function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
+
+    function connect() {
+      if (!WORKER_URL || isArchive) return;
+      ws = new WebSocket(WORKER_URL.replace(/^http/, 'ws') + '/wall/' + wanted + '/live');
+      ws.onopen = function () { wsOk = true; };
+      ws.onclose = function () {
+        wsOk = false; myDraft = null;
+        render();
+        setTimeout(connect, 3000);
+      };
+      ws.onmessage = function (evt) {
+        var m; try { m = JSON.parse(evt.data); } catch (_) { return; }
+        if (m.t === 'state') {
+          var you = m.you;
+          st = m; st.you = you;
+          render();
+        } else if (m.t === 'presence') {
+          st.presence = m.count; presEl.textContent = presenceLine();
+        } else if (m.t === 'draft') {
+          if (m.gid === st.you) {
+            if (pendingStart && !myDraft) { myDraft = makeMyDraft(m.color); pendingStart = false; }
+          } else {
+            var i = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
+            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color });
+            else st.drafts[i].text = m.text;
+          }
+          render();
+        } else if (m.t === 'gone') {
+          st.drafts = (st.drafts || []).filter(function (d) { return d.gid !== m.gid; });
+          if (m.gid === st.you) myDraft = null;
+          render();
+        } else if (m.t === 'ink') {
+          st.notes.push(m.note);
+          st.drafts = (st.drafts || []).filter(function (d) { return d.gid !== m.gid; });
+          if (m.gid === st.you) { myDraft = null; say('stuck. thank you.'); }
+          st.full = m.full;
+          render();
+        } else if (m.t === 'refresh') {
+          fetchState().then(function (s) { var you = st && st.you; st = s; st.you = you; render(); });
+        } else if (m.t === 'deny') {
+          pendingStart = false;
+          say(m.reason);
+        }
+      };
+    }
+
+    /* ---- boot ---- */
+    function fetchState() {
+      if (WORKER_URL && !isArchive) {
+        return fetch(WORKER_URL + '/wall/' + wanted).then(function (r) {
+          if (!r.ok) throw new Error('engine ' + r.status);
+          return r.json();
+        }).catch(function () {
+          return fetch('data/wall-' + wanted + '.json').then(function (r) { return r.json(); });
+        });
+      }
+      return fetch('data/wall-' + wanted + '.json').then(function (r) {
+        if (!r.ok) throw new Error('no wall ' + wanted);
+        return r.json();
+      });
+    }
+
+    Promise.all([
+      fetchState(),
+      fetch('data/archive.json').then(function (r) { return r.ok ? r.json() : { walls: [] }; })
+    ]).then(function (res) {
+      st = res[0];
+      st.notes = st.notes || [];
+      st.drafts = st.drafts || [];
+      st.cap = st.cap || 96;
+      if (res[1].walls && res[1].walls.length) {
+        var sl = document.getElementById('shelfLink');
+        sl.hidden = false;
+        sl.href = '?wall=' + res[1].walls[res[1].walls.length - 1].id;
+      }
+      render();
+      connect();
+    }).catch(function (err) {
+      wallEl.className = 'wallerror';
+      wallEl.textContent = 'the wall is unreachable. (' + err.message + ')';
+    });
+  })();
+  </script>
+
+</body>
+</html>

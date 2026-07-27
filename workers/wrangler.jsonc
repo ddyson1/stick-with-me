@@ -1,0 +1,26 @@
+{
+  // swm-wall: the live wall engine for stick-with-me.com
+  "name": "swm-wall",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-27",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+
+  "durable_objects": {
+    "bindings": [{ "name": "WALL", "class_name": "Wall" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Wall"] }],
+
+  "vars": {
+    "ALLOWED_ORIGINS": "https://stick-with-me.com,https://www.stick-with-me.com,https://ddyson1.github.io,http://127.0.0.1:8791",
+    "NOTES_PER_WALL": "96",
+    "KILLED": "false"
+  }
+
+  // Secrets (wrangler secret put):
+  //   OWNER_KEY — eraser/seed key
+}
