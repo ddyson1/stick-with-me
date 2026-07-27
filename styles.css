@@ -223,6 +223,31 @@ body {
 .note.longtext.f-type { font-size: 10.5px; }
 .note.longtext.f-plain { font-size: 11px; }
 
+/* doodles live on an svg layer under the words */
+.note svg, .bignote svg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none;
+}
+.note svg polyline, .bignote svg polyline, .benchnote svg polyline {
+  fill: none; stroke: currentColor;
+  stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+}
+.note .notetext, .note .sg, .note .who { position: relative; }
+.bignote .txt, .bignote .sg, .bignote .where, .bignote .row { position: relative; }
+
+/* peel: your note, briefly yours to take back */
+.peelbtn {
+  position: absolute; top: 5px; left: 8px; z-index: 2;
+  font-family: var(--sans); font-size: 8.5px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(44, 45, 48, 0.45);
+  background: none; border: 1px dashed rgba(44, 45, 48, 0.3);
+  border-radius: 5px; padding: 1px 5px; cursor: pointer;
+}
+.peelbtn:hover { color: var(--blue); border-color: var(--blue); }
+
+.note.yours { cursor: pointer; }
+
 .note.live { outline: 2.5px solid rgba(76, 111, 255, 0.55); animation: glowp 2s ease-in-out infinite; }
 @keyframes glowp { 0%,100% { outline-color: rgba(76,111,255,.3) } 50% { outline-color: rgba(76,111,255,.9) } }
 .note .caret {
@@ -289,6 +314,81 @@ body {
 .tray .fbtn.hand { font-family: var(--hand); }
 .tray .fbtn.type { font-family: var(--type); font-size: 10px; }
 .tray .fbtn.plain { font-family: var(--sans); font-size: 11px; }
+
+/* ---- the workbench: where your note is made ---- */
+.benchcard {
+  display: flex; gap: 1.4rem; align-items: stretch;
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 18px;
+  box-shadow: 0 30px 70px rgba(10, 10, 20, 0.35);
+  padding: 1.4rem;
+  max-width: 92vw;
+}
+.benchnote {
+  position: relative;
+  width: min(340px, 60vw); height: min(340px, 60vw);
+  border-radius: 10px;
+  padding: 18px 19px;
+  box-shadow: 0 10px 26px var(--note-shadow);
+  flex: 0 0 auto;
+}
+.benchnote textarea {
+  position: relative; z-index: 1;
+  font-family: inherit; font-size: 26px; line-height: 1.4;
+  color: inherit; background: transparent;
+  border: 0; outline: none; resize: none; padding: 0;
+  width: 100%; height: 100%;
+}
+.benchnote.f-type textarea { font-size: 17px; line-height: 1.7; }
+.benchnote.f-plain textarea { font-size: 18px; line-height: 1.6; }
+.benchnote svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.benchnote.drawing { cursor: crosshair; touch-action: none; }
+.benchnote.drawing textarea { pointer-events: none; opacity: 0.55; }
+
+.benchside { display: flex; flex-direction: column; gap: 0.7rem; justify-content: center; min-width: 13rem; }
+.benchside .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.benchside .swatch {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  cursor: pointer; padding: 0;
+}
+.benchside .swatch.on { outline: 2px solid var(--blue); outline-offset: 1.5px; }
+.benchside .fbtn {
+  all: unset; cursor: pointer;
+  min-width: 30px; height: 26px;
+  display: grid; place-items: center;
+  font-size: 14px; color: var(--chrome-dim);
+  border: 1px solid var(--card-line); border-radius: 7px;
+  padding: 0 6px;
+}
+.benchside .fbtn.on { color: var(--blue); border-color: var(--blue); }
+.benchside .fbtn.hand { font-family: var(--hand); }
+.benchside .fbtn.type { font-family: var(--type); font-size: 11px; }
+.benchside .fbtn.plain { font-family: var(--sans); font-size: 12px; }
+.benchside input {
+  font-family: var(--hand); font-size: 1rem; color: var(--chrome);
+  background: transparent;
+  border: 0; border-bottom: 1px dashed var(--card-line);
+  outline: none; padding: 0.2rem 0;
+}
+.benchside input:focus { border-bottom-color: var(--blue); }
+.benchops { display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.3rem; }
+.benchops button {
+  all: unset; cursor: pointer;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 0.45rem 0.9rem; border-radius: 8px;
+}
+#bToss { color: var(--chrome-dim); }
+#bToss:hover { color: #c23b57; }
+#bStick { color: #fff; background: var(--blue); }
+#bStick:hover { background: var(--blue-deep); }
+#bStick:disabled { opacity: 0.5; cursor: default; }
+.benchhint { margin: 0; font-family: var(--hand); font-size: 0.95rem; color: var(--chrome-faint); }
+@media (max-width: 700px) {
+  .benchcard { flex-direction: column; overflow-y: auto; max-height: 92vh; }
+  .benchnote { width: min(340px, 84vw); height: min(340px, 84vw); }
+}
 
 /* ---- the pad ---- */
 .pad {

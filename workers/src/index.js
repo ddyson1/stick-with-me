@@ -23,6 +23,10 @@ const COLORS = ['#ffe066', '#ff9fb0', '#8ed6ff', '#b6f2a8', '#ffc78a', '#d9b8ff'
 const INKS = ['#2c2d30', '#2456d6', '#c23b57', '#1e7a46', '#6b3fb8'];
 const FONTS = ['hand', 'type', 'plain'];
 const MAX_CHARS = 300;                    /* a sticky, not an essay */
+const MAX_STROKES = 24;                   /* doodles stay doodles */
+const MAX_STROKE_POINTS = 200;
+const MAX_TOTAL_POINTS = 1200;
+const PEEL_WINDOW_MS = 15 * 60 * 1000;    /* change your mind, briefly */
 const INK_IDLE_MS = 2 * 60 * 1000;
 const EMPTY_DRAFT_MS = 90 * 1000;
 const ALARM_TICK_MS = 30 * 1000;
@@ -45,6 +49,30 @@ async function sha256hex(s) {
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/* normalize an incoming doodle: bounded strokes of bounded 0..1 points */
+function cleanStrokes(v) {
+  if (!Array.isArray(v)) return [];
+  const out = [];
+  let total = 0;
+  for (const s of v.slice(0, MAX_STROKES)) {
+    if (!Array.isArray(s)) continue;
+    const pts = [];
+    for (const p of s.slice(0, MAX_STROKE_POINTS)) {
+      if (!Array.isArray(p) || p.length < 2) continue;
+      const x = Number(p[0]), y = Number(p[1]);
+      if (!isFinite(x) || !isFinite(y)) continue;
+      pts.push([
+        Math.round(Math.min(1, Math.max(0, x)) * 1000) / 1000,
+        Math.round(Math.min(1, Math.max(0, y)) * 1000) / 1000
+      ]);
+      if (++total >= MAX_TOTAL_POINTS) break;
+    }
+    if (pts.length > 1) out.push(pts);
+    if (total >= MAX_TOTAL_POINTS) break;
+  }
+  return out;
+}
+
 async function keyMatches(env, given) {
   if (!env.OWNER_KEY || !given) return false;
   const a = new TextEncoder().encode(await sha256hex(given));
@@ -55,6 +83,8 @@ async function keyMatches(env, given) {
 export class Wall extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
+    /* heartbeat answered without waking the object */
+    this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair('ping', 'pong'));
   }
 
   _cap() { return parseInt(this.env.NOTES_PER_WALL, 10) || 96; }
@@ -78,7 +108,7 @@ export class Wall extends DurableObject {
       id: (await this.ctx.storage.get('id')) || '001',
       cap: this._cap(),
       notes,
-      drafts: Object.values(drafts).map((d) => ({ gid: d.gid, text: d.text, color: d.color, ink: d.ink, font: d.font, x: d.x, y: d.y })),
+      drafts: Object.values(drafts).map((d) => ({ gid: d.gid, text: d.text, color: d.color, ink: d.ink, font: d.font, strokes: d.strokes || [], x: d.x, y: d.y })),
       presence: this.ctx.getWebSockets().length,
       full: false, /* an endless wall does not fill */
       killed: this.env.KILLED === 'true'
@@ -149,6 +179,7 @@ export class Wall extends DurableObject {
 
     if (msg.t === 'start') return this._start(ws, att, msg);
     if (msg.t === 'write') return this._write(ws, att, msg);
+    if (msg.t === 'doodle') return this._doodle(ws, att, msg);
     if (msg.t === 'style') return this._style(ws, att, msg);
     if (msg.t === 'sign') return this._sign(ws, att, msg);
     if (msg.t === 'release') return this._releaseOrInk(att.g, true);
@@ -188,7 +219,7 @@ export class Wall extends DurableObject {
     const y = this._pos(msg && msg.y, (Math.random() - 0.5) * 600);
     drafts[att.g] = {
       gid: att.g, iph: att.iph, color, ink: INKS[0], font: FONTS[0],
-      text: '', sign: '', x, y,
+      text: '', sign: '', strokes: [], x, y,
       started: Date.now(), lastWrite: Date.now()
     };
     await this.ctx.storage.put('drafts', drafts);
@@ -209,6 +240,16 @@ export class Wall extends DurableObject {
     d.lastWrite = Date.now();
     await this.ctx.storage.put('drafts', drafts);
     this._broadcast({ t: 'draft', gid: att.g, text, color: d.color, ink: d.ink, font: d.font, x: d.x, y: d.y }, ws);
+  }
+
+  async _doodle(ws, att, msg) {
+    const drafts = await this._drafts();
+    const d = drafts[att.g];
+    if (!d) return ws.send(JSON.stringify({ t: 'deny', reason: 'pull a blank sticky first.' }));
+    d.strokes = cleanStrokes(msg.strokes);
+    d.lastWrite = Date.now();
+    await this.ctx.storage.put('drafts', drafts);
+    this._broadcast({ t: 'doodle', gid: att.g, strokes: d.strokes }, ws);
   }
 
   async _style(ws, att, msg) {
@@ -232,11 +273,15 @@ export class Wall extends DurableObject {
     }
   }
 
+  _hasContent(d) {
+    return (d.text && d.text.trim()) || (d.strokes && d.strokes.length);
+  }
+
   async _releaseOrInk(gid) {
     const drafts = await this._drafts();
     const d = drafts[gid];
     if (!d) return;
-    if (d.text && d.text.trim()) return this._ink(d);
+    if (this._hasContent(d)) return this._ink(d);
     delete drafts[gid];
     await this.ctx.storage.put('drafts', drafts);
     this._broadcast({ t: 'gone', gid });
@@ -246,9 +291,10 @@ export class Wall extends DurableObject {
     const notes = await this._notes();
     const note = {
       id: crypto.randomUUID().slice(0, 8),
-      text: d.text.trim().slice(0, MAX_CHARS),
+      text: (d.text || '').trim().slice(0, MAX_CHARS),
       name: (d.sign || '').trim() || 'a stranger',
       color: d.color, ink: d.ink, font: d.font,
+      strokes: d.strokes || [],
       x: d.x, y: d.y,
       inked: new Date().toISOString()
     };
@@ -257,8 +303,43 @@ export class Wall extends DurableObject {
     log[d.iph] = Date.now();
     const drafts = await this._drafts();
     delete drafts[d.gid];
-    await this.ctx.storage.put({ notes, inklog: log, drafts });
+
+    /* the peel: a short window in which the author's browser may take it back */
+    const token = crypto.randomUUID();
+    const peels = (await this.ctx.storage.get('peels')) || {};
+    const now = Date.now();
+    for (const k of Object.keys(peels)) if (peels[k].exp < now) delete peels[k];
+    peels[note.id] = { h: await sha256hex(token), iph: d.iph, exp: now + PEEL_WINDOW_MS };
+
+    await this.ctx.storage.put({ notes, inklog: log, drafts, peels });
     this._broadcast({ t: 'ink', note, gid: d.gid, full: false });
+    for (const ws of this.ctx.getWebSockets()) {
+      try {
+        const att = ws.deserializeAttachment();
+        if (att && att.g === d.gid) {
+          ws.send(JSON.stringify({ t: 'yours', id: note.id, peel: token, exp: peels[note.id].exp }));
+          break;
+        }
+      } catch (_) { /* socket mid-close */ }
+    }
+  }
+
+  async peel(noteId, token) {
+    const peels = (await this.ctx.storage.get('peels')) || {};
+    const e = peels[noteId];
+    if (!e || Date.now() > e.exp) return { ok: false, error: 'the glue has set.' };
+    const a = new TextEncoder().encode(await sha256hex(token || ''));
+    const b = new TextEncoder().encode(e.h);
+    if (a.byteLength !== b.byteLength || !crypto.subtle.timingSafeEqual(a, b)) {
+      return { ok: false, error: 'not your note.' };
+    }
+    const notes = (await this._notes()).filter((n) => n.id !== noteId);
+    delete peels[noteId];
+    const log = (await this.ctx.storage.get('inklog')) || {};
+    delete log[e.iph];   /* peeling gives the hour back */
+    await this.ctx.storage.put({ notes, peels, inklog: log });
+    this._broadcast({ t: 'refresh' });
+    return { ok: true };
   }
 
   async alarm() {
@@ -267,9 +348,9 @@ export class Wall extends DurableObject {
     let changed = false, remaining = 0;
     for (const gid of Object.keys(drafts)) {
       const d = drafts[gid];
-      if (d.text && d.text.trim() && now - d.lastWrite >= INK_IDLE_MS) {
+      if (this._hasContent(d) && now - d.lastWrite >= INK_IDLE_MS) {
         await this._ink(d); changed = true;
-      } else if ((!d.text || !d.text.trim()) && now - d.started >= EMPTY_DRAFT_MS) {
+      } else if (!this._hasContent(d) && now - d.started >= EMPTY_DRAFT_MS) {
         delete drafts[gid];
         await this.ctx.storage.put('drafts', drafts);
         this._broadcast({ t: 'gone', gid });
@@ -294,6 +375,7 @@ export default {
 
     const m = url.pathname.match(/^\/wall\/(\d{3})(\/live)?$/);
     const mOwner = url.pathname.match(/^\/wall\/(\d{3})\/(erase|seed|move)$/);
+    const mPeel = url.pathname.match(/^\/wall\/(\d{3})\/peel$/);
 
     try {
       if (m && !m[2] && request.method === 'GET') {
@@ -304,6 +386,13 @@ export default {
         const stub = env.WALL.getByName(m[1]);
         return stub.fetch(request);
       }
+      if (mPeel && request.method === 'POST') {
+        const body = await request.json();
+        const stub = env.WALL.getByName(mPeel[1]);
+        const out = await stub.peel(String(body.id || ''), String(body.token || ''));
+        return new Response(JSON.stringify(out), { status: out.ok ? 200 : 403, headers: { ...J, ...cors } });
+      }
+
       if (mOwner && request.method === 'POST') {
         const body = await request.json();
         if (!(await keyMatches(env, body.key))) {

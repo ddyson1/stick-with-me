@@ -16,7 +16,6 @@
   <link rel="stylesheet" href="styles.css">
   <script>
     (function () {
-      /* day studio is the default; the lamp turns it to night */
       var t = localStorage.getItem('swm_theme');
       if (t === 'night') document.documentElement.setAttribute('data-theme', 'night');
     })();
@@ -29,7 +28,6 @@
     <button class="lamp" id="lamp" type="button" aria-label="toggle the lamp"></button>
   </div>
 
-  <!-- ============ the front door ============ -->
   <header class="hero">
     <h1 class="t">stick with me</h1>
     <p class="tag">an endless wall of support from strangers, for strangers.</p>
@@ -50,7 +48,6 @@
     <p class="downhint" aria-hidden="true">the wall &darr; &middot; drag to wander &middot; scroll to zoom</p>
   </header>
 
-  <!-- ============ the endless wall ============ -->
   <main class="wall" id="wall" aria-label="the wall">
     <div class="space" id="space"></div>
     <div class="wallops">
@@ -61,7 +58,6 @@
     <div class="coords" id="coords" title="where you are — the first note is (0, 0)">0, 0</div>
   </main>
 
-  <!-- ============ the pad ============ -->
   <div class="pad" id="pad" title="drag a blank onto the wall">
     <div class="sheet s3"></div>
     <div class="sheet s2"></div>
@@ -76,9 +72,10 @@
     <p class="fine">no accounts &middot; notes sign &ldquo;a stranger&rdquo; unless you add a name &middot; be gentle</p>
   </footer>
 
-  <!-- ============ take-one overlay ============ -->
+  <!-- take-one overlay -->
   <div class="veil" id="veil" hidden>
     <div class="bignote" id="bignote" role="dialog" aria-label="a note for you">
+      <svg id="bigSvg" viewBox="0 0 100 100" aria-hidden="true"></svg>
       <p class="txt" id="bigTxt"></p>
       <p class="sg" id="bigSg"></p>
       <p class="where" id="bigWhere"></p>
@@ -86,6 +83,33 @@
         <button type="button" id="another">another</button>
         <button type="button" id="goThere">go there</button>
         <button type="button" id="keep">keep it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- the workbench: where your note is made -->
+  <div class="veil" id="bench" hidden>
+    <div class="benchcard" role="dialog" aria-label="your note">
+      <div class="benchnote" id="benchNote">
+        <svg id="benchSvg" viewBox="0 0 100 100" aria-hidden="true"></svg>
+        <textarea id="bTa" maxlength="300" placeholder="something kind…"></textarea>
+      </div>
+      <div class="benchside">
+        <div class="row modes">
+          <button type="button" id="mText" class="fbtn on" title="write">Aa</button>
+          <button type="button" id="mDraw" class="fbtn" title="doodle">&#9998;</button>
+          <button type="button" id="bUndo" class="fbtn" title="undo stroke" hidden>&#8630;</button>
+          <button type="button" id="bWipe" class="fbtn" title="clear doodle" hidden>&#10005;</button>
+        </div>
+        <div class="row" id="rowPaper"></div>
+        <div class="row" id="rowInk"></div>
+        <div class="row" id="rowFont"></div>
+        <input id="bSign" maxlength="40" type="text" placeholder="— signed (optional)">
+        <div class="benchops">
+          <button type="button" id="bToss">toss it</button>
+          <button type="button" id="bStick">stick it</button>
+        </div>
+        <p class="benchhint">quiet sets it too — two minutes and it sticks itself.</p>
       </div>
     </div>
   </div>
@@ -110,7 +134,6 @@
       else { document.documentElement.setAttribute('data-theme', 'night'); localStorage.setItem('swm_theme', 'night'); }
     });
 
-    /* studio palettes — must mirror the engine's allowlists */
     var PAPERS = ['#ffe066', '#ff9fb0', '#8ed6ff', '#b6f2a8', '#ffc78a', '#d9b8ff', '#ffffff'];
     var INKS = ['#2c2d30', '#2456d6', '#c23b57', '#1e7a46', '#6b3fb8'];
     var FONTS = ['hand', 'type', 'plain'];
@@ -133,10 +156,41 @@
       say._t = setTimeout(function () { sayEl.textContent = ''; }, 4000);
     }
 
-    /* ================= the camera ================= */
-    var cam = { x: 0, y: 0, z: 1 };          /* world point at viewport center, zoom */
-    var ZMIN = 0.2, ZMAX = 2.2;
+    /* doodle → svg */
+    var SVGNS = 'http://www.w3.org/2000/svg';
+    function drawStrokes(svg, strokes) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      (strokes || []).forEach(function (s) {
+        var pl = document.createElementNS(SVGNS, 'polyline');
+        pl.setAttribute('points', s.map(function (p) {
+          return (p[0] * 100).toFixed(1) + ',' + (p[1] * 100).toFixed(1);
+        }).join(' '));
+        svg.appendChild(pl);
+      });
+    }
+    function noteSvg(strokes, ink) {
+      var svg = document.createElementNS(SVGNS, 'svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.style.color = ink || INKS[0];
+      drawStrokes(svg, strokes);
+      return svg;
+    }
 
+    /* ---- peel tokens (this browser's own notes, briefly) ---- */
+    var peels = {};
+    try { peels = JSON.parse(localStorage.getItem('swm_peels') || '{}'); } catch (_) {}
+    (function prune() {
+      var now = Date.now(), changed = false;
+      Object.keys(peels).forEach(function (id) {
+        if (!peels[id] || peels[id].e < now) { delete peels[id]; changed = true; }
+      });
+      if (changed) localStorage.setItem('swm_peels', JSON.stringify(peels));
+    })();
+    function savePeels() { localStorage.setItem('swm_peels', JSON.stringify(peels)); }
+
+    /* ================= camera ================= */
+    var cam = { x: 0, y: 0, z: 1 };
+    var ZMIN = 0.2, ZMAX = 2.2;
     var coordsEl = document.getElementById('coords');
     function applyCam() {
       spaceEl.style.transform =
@@ -158,8 +212,13 @@
       cam.y += before.y - after.y;
       applyCam();
     }
-
-    /* camera home: the living center — centroid of the most recent notes */
+    function glideTo(x, y, minZ) {
+      cam.x = x; cam.y = y;
+      if (minZ && cam.z < minZ) cam.z = 1;
+      spaceEl.classList.add('glide');
+      setTimeout(function () { spaceEl.classList.remove('glide'); }, 650);
+      applyCam();
+    }
     function goHome(animate) {
       var pts = (st && st.notes.length ? st.notes.slice(-24) : [])
         .concat((st && st.drafts) || []);
@@ -194,9 +253,7 @@
       zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.3);
     });
 
-    /* pan: drag the plaster (not a note); pinch: two pointers; wheel: zoom */
-    var pans = {};   /* active pointers on the wall background */
-    var pinch = null;
+    var pans = {}, pinch = null;
     wallEl.addEventListener('pointerdown', function (e) {
       if (e.target.closest('.note') || e.target.closest('.wallops')) return;
       pans[e.pointerId] = { x: e.clientX, y: e.clientY };
@@ -239,7 +296,9 @@
 
     /* ================= state ================= */
     var st = null;
-    var ws = null, wsOk = false, myDraft = null, pendingStart = false;
+    var ws = null, wsOk = false, pendingStart = false;
+    /* my draft lives in the workbench */
+    var mine = null; /* {color, ink, font, text, sign, strokes, x, y} */
 
     function presenceLine() {
       if (isArchive) return 'wall ' + wanted + ', kept — ' + st.notes.length + ' notes';
@@ -253,6 +312,7 @@
 
     /* ---- take one ---- */
     var veil = document.getElementById('veil');
+    var lastTaken = null;
     function takeOne() {
       if (!st || !st.notes.length) { say('the wall is bare — be the first to leave one.'); return; }
       var n = st.notes[Math.floor(Math.random() * st.notes.length)];
@@ -264,35 +324,212 @@
       bn.className = 'bignote ' + fontClass(n.font);
       bn.style.background = n.color || PAPERS[0];
       document.getElementById('bigTxt').style.color = n.ink || INKS[0];
+      var bs = document.getElementById('bigSvg');
+      bs.style.color = n.ink || INKS[0];
+      drawStrokes(bs, n.strokes);
       bn.style.transform = 'rotate(' + tilt(n.id) + 'deg)';
       veil.hidden = false;
     }
-    var lastTaken = null;
     document.getElementById('actTake').addEventListener('click', takeOne);
     document.getElementById('another').addEventListener('click', takeOne);
     document.getElementById('goThere').addEventListener('click', function () {
       if (!lastTaken) return;
       veil.hidden = true;
-      cam.x = lastTaken.x || 0; cam.y = lastTaken.y || 0;
-      if (cam.z < 0.8) cam.z = 1;
-      spaceEl.classList.add('glide');
-      setTimeout(function () { spaceEl.classList.remove('glide'); }, 650);
-      applyCam();
+      glideTo(lastTaken.x || 0, lastTaken.y || 0, 0.8);
       wallEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     document.getElementById('keep').addEventListener('click', function () { veil.hidden = true; });
     veil.addEventListener('click', function (e) { if (e.target === veil) veil.hidden = true; });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') veil.hidden = true; });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') veil.hidden = true;
+    });
 
-    /* ---- leave one ---- */
+    /* ================= the workbench ================= */
+    var bench = document.getElementById('bench');
+    var benchNote = document.getElementById('benchNote');
+    var benchSvg = document.getElementById('benchSvg');
+    var bTa = document.getElementById('bTa');
+    var bSign = document.getElementById('bSign');
+    var drawing = false;
+
+    function benchApply() {
+      if (!mine) return;
+      benchNote.className = 'benchnote ' + fontClass(mine.font) + (drawing ? ' drawing' : '');
+      benchNote.style.background = mine.color;
+      benchNote.style.color = mine.ink;
+      benchSvg.style.color = mine.ink;
+      drawStrokes(benchSvg, mine.strokes);
+      document.getElementById('bUndo').hidden = !drawing;
+      document.getElementById('bWipe').hidden = !drawing;
+    }
+
+    function openBench() {
+      bench.hidden = false;
+      benchApply();
+      buildTray();
+      bTa.value = mine.text || '';
+      bSign.value = mine.sign || '';
+      if (!drawing) setTimeout(function () { bTa.focus(); }, 60);
+    }
+    function closeBench() { bench.hidden = true; drawing = false; }
+
+    /* mode toggle */
+    document.getElementById('mText').addEventListener('click', function () {
+      drawing = false;
+      this.classList.add('on');
+      document.getElementById('mDraw').classList.remove('on');
+      benchApply();
+      bTa.focus();
+    });
+    document.getElementById('mDraw').addEventListener('click', function () {
+      drawing = true;
+      this.classList.add('on');
+      document.getElementById('mText').classList.remove('on');
+      benchApply();
+    });
+    document.getElementById('bUndo').addEventListener('click', function () {
+      if (!mine || !mine.strokes.length) return;
+      mine.strokes.pop();
+      benchApply(); scheduleDoodle();
+    });
+    document.getElementById('bWipe').addEventListener('click', function () {
+      if (!mine) return;
+      mine.strokes = [];
+      benchApply(); scheduleDoodle();
+    });
+
+    /* stroke capture */
+    var liveStroke = null;
+    benchNote.addEventListener('pointerdown', function (e) {
+      if (!drawing || !mine) return;
+      if (mine.strokes.length >= 24) { say('the doodle is full — undo a line to draw more.'); return; }
+      e.preventDefault();
+      try { benchNote.setPointerCapture(e.pointerId); } catch (_) {}
+      var r = benchNote.getBoundingClientRect();
+      liveStroke = [[(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]];
+      mine.strokes.push(liveStroke);
+    });
+    benchNote.addEventListener('pointermove', function (e) {
+      if (!drawing || !liveStroke) return;
+      var r = benchNote.getBoundingClientRect();
+      var x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      var last = liveStroke[liveStroke.length - 1];
+      if (Math.hypot(x - last[0], y - last[1]) < 0.012) return;
+      if (liveStroke.length < 200) liveStroke.push([Math.min(1, Math.max(0, x)), Math.min(1, Math.max(0, y))]);
+      drawStrokes(benchSvg, mine.strokes);
+    });
+    function strokeEnd() {
+      if (liveStroke) {
+        if (liveStroke.length < 2) mine.strokes.pop(); /* a tap is not a line */
+        liveStroke = null;
+        benchApply(); scheduleDoodle();
+      }
+    }
+    benchNote.addEventListener('pointerup', strokeEnd);
+    benchNote.addEventListener('pointercancel', strokeEnd);
+
+    /* tray */
+    function buildTray() {
+      var rowP = document.getElementById('rowPaper');
+      var rowI = document.getElementById('rowInk');
+      var rowF = document.getElementById('rowFont');
+      rowP.textContent = ''; rowI.textContent = ''; rowF.textContent = '';
+      PAPERS.forEach(function (p) {
+        var s = el('button', 'swatch' + (mine && mine.color === p ? ' on' : ''));
+        s.type = 'button'; s.style.background = p;
+        s.addEventListener('click', function () {
+          mine.color = p; benchApply(); markOn(rowP, s); scheduleStyle();
+        });
+        rowP.appendChild(s);
+      });
+      INKS.forEach(function (ink) {
+        var s = el('button', 'swatch' + (mine && mine.ink === ink ? ' on' : ''));
+        s.type = 'button'; s.style.background = ink;
+        s.addEventListener('click', function () {
+          mine.ink = ink; benchApply(); markOn(rowI, s); scheduleStyle();
+        });
+        rowI.appendChild(s);
+      });
+      FONTS.forEach(function (f) {
+        var b = el('button', 'fbtn ' + f + (mine && mine.font === f ? ' on' : ''), 'Aa');
+        b.type = 'button';
+        b.addEventListener('click', function () {
+          mine.font = f; benchApply(); markOn(rowF, b); scheduleStyle();
+        });
+        rowF.appendChild(b);
+      });
+      function markOn(row, elx) {
+        row.querySelectorAll('.on').forEach(function (x2) { x2.classList.remove('on'); });
+        elx.classList.add('on');
+      }
+    }
+
+    /* debounced senders */
+    var tWrite = null, tStyle = null, tDoodle = null;
+    bTa.addEventListener('input', function () {
+      if (!mine) return;
+      mine.text = bTa.value;
+      clearTimeout(tWrite);
+      tWrite = setTimeout(function () { send({ t: 'write', text: mine.text }); }, 250);
+    });
+    bSign.addEventListener('change', function () {
+      if (!mine) return;
+      mine.sign = bSign.value;
+      send({ t: 'sign', name: mine.sign });
+    });
+    function scheduleStyle() {
+      clearTimeout(tStyle);
+      tStyle = setTimeout(function () {
+        send({ t: 'style', color: mine.color, ink: mine.ink, font: mine.font });
+      }, 250);
+    }
+    function scheduleDoodle() {
+      clearTimeout(tDoodle);
+      tDoodle = setTimeout(function () { send({ t: 'doodle', strokes: mine.strokes }); }, 400);
+    }
+
+    /* stick / toss — sequenced so the engine throttle drops nothing.
+       A watchdog resends the release, then recycles the socket: a writer
+       must never be stranded by a silently dead connection. */
+    var releaseWatch = null;
+    function armReleaseWatch() {
+      clearTimeout(releaseWatch);
+      releaseWatch = setTimeout(function () {
+        if (!mine) return;             /* ink or gone arrived — all good */
+        send({ t: 'release' });
+        releaseWatch = setTimeout(function () {
+          if (!mine) return;
+          try { ws.close(); } catch (_) {} /* reconnect + state resync decide it */
+        }, 3000);
+      }, 3000);
+    }
+    document.getElementById('bStick').addEventListener('click', function () {
+      if (!mine) return;
+      var b = this; b.disabled = true;
+      clearTimeout(tWrite); clearTimeout(tDoodle);
+      send({ t: 'write', text: bTa.value });
+      setTimeout(function () { send({ t: 'doodle', strokes: mine.strokes }); }, 170);
+      setTimeout(function () { send({ t: 'release' }); b.disabled = false; armReleaseWatch(); }, 360);
+    });
+    document.getElementById('bToss').addEventListener('click', function () {
+      if (!mine) return;
+      clearTimeout(tWrite); clearTimeout(tDoodle);
+      send({ t: 'write', text: '' });
+      setTimeout(function () { send({ t: 'doodle', strokes: [] }); }, 170);
+      setTimeout(function () { send({ t: 'release' }); }, 360);
+    });
+    bench.addEventListener('click', function (e) {
+      if (e.target === bench) closeBench(); /* click outside: bench closes, draft stays on the wall */
+    });
+
+    /* ---- start a draft ---- */
     function startDraft(x, y) {
       if (!wsOk) { say('the lamp is off — writing is closed right now.'); return; }
-      if (myDraft) { wallEl.scrollIntoView({ behavior: 'smooth' }); return; }
+      if (mine) { openBench(); return; }
       pendingStart = true;
       send({ t: 'start', x: x, y: y });
     }
     document.getElementById('actLeave').addEventListener('click', function () {
-      /* near the current camera center, slightly off so it feels placed */
       startDraft(cam.x + (Math.random() - 0.5) * 240, cam.y + (Math.random() - 0.5) * 240);
       wallEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -300,8 +537,8 @@
     /* ---- the pad ---- */
     var ghost = null;
     function padDown(e) {
-      if (isArchive || !wsOk || myDraft) {
-        if (myDraft) say('finish your note first.');
+      if (isArchive || !wsOk || mine) {
+        if (mine) { say('finish your note first.'); openBench(); }
         else if (!wsOk) say('the lamp is off — writing is closed right now.');
         return;
       }
@@ -342,6 +579,8 @@
       d.style.top = (y || 0) + 'px';
       d.style.transform = 'translate(-50%,-50%) rotate(' + tilt(seed) + 'deg)';
     }
+    function peelable(id) { return peels[id] && peels[id].e > Date.now(); }
+
     function render() {
       spaceEl.textContent = '';
       presEl.textContent = presenceLine();
@@ -352,172 +591,146 @@
         d.style.color = n.ink || INKS[0];
         place(d, n.x, n.y, n.id);
         d.title = '( ' + Math.round(n.x || 0) + ', ' + Math.round(n.y || 0) + ' )';
-        d.appendChild(el('span', null, n.text));
+        if (n.strokes && n.strokes.length) d.appendChild(noteSvg(n.strokes, n.ink));
+        d.appendChild(el('span', 'notetext', n.text));
         d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
+        if (peelable(n.id) && !isArchive) {
+          var pb = el('button', 'peelbtn', 'peel');
+          pb.type = 'button';
+          pb.title = 'take your note back (yours, briefly)';
+          pb.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+          pb.addEventListener('click', function (e) {
+            e.stopPropagation();
+            doPeel(n.id);
+          });
+          d.appendChild(pb);
+        }
         spaceEl.appendChild(d);
       });
 
       (st.drafts || []).forEach(function (dr) {
-        if (myDraft && dr.gid === st.you) return;
-        var d = el('div', 'note live ' + fontClass(dr.font));
-        d.style.background = dr.color || '#ffffff';
-        d.style.color = dr.ink || INKS[0];
+        var isMe = mine && dr.gid === st.you;
+        var d = el('div', 'note live ' + fontClass(isMe ? mine.font : dr.font) + (isMe ? ' yours' : ''));
+        d.style.background = (isMe ? mine.color : dr.color) || '#ffffff';
+        d.style.color = (isMe ? mine.ink : dr.ink) || INKS[0];
         place(d, dr.x, dr.y, dr.gid);
-        d.appendChild(el('span', 'who', '✎ a stranger'));
-        var span = el('span', null, dr.text || '');
+        var strokes = isMe ? mine.strokes : dr.strokes;
+        if (strokes && strokes.length) d.appendChild(noteSvg(strokes, isMe ? mine.ink : dr.ink));
+        d.appendChild(el('span', 'who', isMe ? '✎ you — tap to edit' : '✎ a stranger'));
+        var span = el('span', 'notetext', (isMe ? mine.text : dr.text) || '');
         d.appendChild(span);
         span.appendChild(el('span', 'caret'));
+        if (isMe) {
+          d.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+          d.addEventListener('click', openBench);
+        }
         spaceEl.appendChild(d);
       });
 
-      if (myDraft) spaceEl.appendChild(myDraft);
-
-      if (!st.notes.length && !(st.drafts || []).length && !myDraft) {
+      if (!st.notes.length && !(st.drafts || []).length) {
         var e0 = el('p', 'bare', isArchive ? '' : 'a bare wall, going on forever.\ndrag a blank from the pad and be first.');
         e0.style.left = '0px'; e0.style.top = '0px';
         spaceEl.appendChild(e0);
       }
     }
 
-    function makeMyDraft(color, x, y) {
-      var d = el('div', 'note mine f-hand');
-      d.style.background = color || '#ffffff';
-      d.style.color = INKS[0];
-      place(d, x, y, 'mine');
-      var ta = el('textarea');
-      ta.maxLength = 300;
-      ta.placeholder = 'something kind…';
-      var sg = el('input');
-      sg.maxLength = 40; sg.type = 'text'; sg.placeholder = '— signed (optional)';
-      var stick = el('button', 'stick', 'stick it');
-      stick.type = 'button';
-      var t = null;
-      ['pointerdown'].forEach(function (ev) {
-        d.addEventListener(ev, function (e) { e.stopPropagation(); });
-      });
-      ta.addEventListener('input', function () {
-        clearTimeout(t);
-        t = setTimeout(function () { send({ t: 'write', text: ta.value }); }, 250);
-      });
-      sg.addEventListener('change', function () { send({ t: 'sign', name: sg.value }); });
-      stick.addEventListener('click', function () {
-        send({ t: 'write', text: ta.value });
-        setTimeout(function () { send({ t: 'release' }); }, 200);
-      });
-      d.appendChild(ta); d.appendChild(sg); d.appendChild(stick);
-
-      /* the tray: paper, ink, hand — your note, your little design.
-         Sends coalesce so rapid clicks survive the server's msg throttle. */
-      var cur = { color: color || '#ffffff', ink: INKS[0], font: 'hand' };
-      var styleT = null;
-      function sendStyle() {
-        clearTimeout(styleT);
-        styleT = setTimeout(function () {
-          send({ t: 'style', color: cur.color, ink: cur.ink, font: cur.font });
-        }, 250);
-      }
-      var tray = el('div', 'tray');
-      var rowP = el('div', 'row'), rowI = el('div', 'row'), rowF = el('div', 'row');
-      PAPERS.forEach(function (p, i) {
-        var s = el('button', 'swatch' + (p === (color || '#ffffff') ? ' on' : ''));
-        s.type = 'button'; s.style.background = p;
-        s.setAttribute('aria-label', 'paper colour ' + (i + 1));
-        s.addEventListener('click', function () {
-          d.style.background = p;
-          rowP.querySelectorAll('.swatch').forEach(function (x2) { x2.classList.remove('on'); });
-          s.classList.add('on');
-          cur.color = p; sendStyle();
-        });
-        rowP.appendChild(s);
-      });
-      INKS.forEach(function (ink, i) {
-        var s = el('button', 'swatch' + (i === 0 ? ' on' : ''));
-        s.type = 'button'; s.style.background = ink;
-        s.setAttribute('aria-label', 'ink colour ' + (i + 1));
-        s.addEventListener('click', function () {
-          d.style.color = ink;
-          rowI.querySelectorAll('.swatch').forEach(function (x2) { x2.classList.remove('on'); });
-          s.classList.add('on');
-          cur.ink = ink; sendStyle();
-        });
-        rowI.appendChild(s);
-      });
-      FONTS.forEach(function (f, i) {
-        var b = el('button', 'fbtn ' + f + (i === 0 ? ' on' : ''), 'Aa');
-        b.type = 'button';
-        b.setAttribute('aria-label', 'hand: ' + f);
-        b.addEventListener('click', function () {
-          d.classList.remove('f-hand', 'f-type', 'f-plain');
-          d.classList.add('f-' + f);
-          rowF.querySelectorAll('.fbtn').forEach(function (x2) { x2.classList.remove('on'); });
-          b.classList.add('on');
-          cur.font = f; sendStyle();
-        });
-        rowF.appendChild(b);
-      });
-      tray.appendChild(rowP); tray.appendChild(rowI); tray.appendChild(rowF);
-      ['pointerdown'].forEach(function (ev) {
-        tray.addEventListener(ev, function (e) { e.stopPropagation(); });
-      });
-      d.appendChild(tray);
-      /* glide the camera to the new note */
-      cam.x = x; cam.y = y;
-      if (cam.z < 0.8) cam.z = 1;
-      spaceEl.classList.add('glide');
-      setTimeout(function () { spaceEl.classList.remove('glide'); }, 650);
-      applyCam();
-      setTimeout(function () { ta.focus(); }, 80);
-      return d;
+    function doPeel(id) {
+      fetch(WORKER_URL + '/wall/' + wanted + '/peel', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: id, token: peels[id].t })
+      }).then(function (r) { return r.json(); }).then(function (out) {
+        if (out.ok) {
+          delete peels[id]; savePeels();
+          st.notes = st.notes.filter(function (n) { return n.id !== id; });
+          render();
+          say('peeled — the hour is yours again.');
+        } else {
+          say(out.error || 'could not peel it.');
+        }
+      }).catch(function () { say('could not reach the wall.'); });
     }
 
     /* ================= live ================= */
     function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
 
+    var hb = null, lastPong = 0;
     function connect() {
       if (!WORKER_URL || isArchive) return;
       ws = new WebSocket(WORKER_URL.replace(/^http/, 'ws') + '/wall/' + wanted + '/live');
-      ws.onopen = function () { wsOk = true; };
+      ws.onopen = function () {
+        wsOk = true;
+        lastPong = Date.now();
+        clearInterval(hb);
+        hb = setInterval(function () {
+          if (ws.readyState !== 1) return;
+          if (Date.now() - lastPong > 65000) { try { ws.close(); } catch (_) {} return; }
+          ws.send('ping');
+        }, 25000);
+      };
       ws.onclose = function () {
-        wsOk = false; myDraft = null;
+        wsOk = false; mine = null; closeBench();
+        clearInterval(hb);
         if (st) render();
         setTimeout(connect, 3000);
       };
       ws.onmessage = function (evt) {
+        if (evt.data === 'pong') { lastPong = Date.now(); return; }
         var m; try { m = JSON.parse(evt.data); } catch (_) { return; }
         if (m.t === 'state') {
-          var first = !st || !st.you;
           var you = m.you;
+          var first = !st || !st.you;
           st = m; st.you = you;
           render();
-          if (first) goHome(false);
+          if (first && !qs.get('at')) goHome(false);
         } else if (m.t === 'presence') {
           st.presence = m.count; presEl.textContent = presenceLine();
         } else if (m.t === 'draft') {
           if (m.gid === st.you) {
-            if (pendingStart && !myDraft) { myDraft = makeMyDraft(m.color, m.x, m.y); pendingStart = false; }
+            if (pendingStart && !mine) {
+              mine = { color: m.color, ink: m.ink || INKS[0], font: m.font || 'hand', text: '', sign: '', strokes: [], x: m.x, y: m.y };
+              pendingStart = false;
+              glideTo(m.x, m.y, 0.8);
+              openBench();
+            }
           } else {
             var i = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
-            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color, ink: m.ink, font: m.font, x: m.x, y: m.y });
+            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color, ink: m.ink, font: m.font, strokes: m.strokes || [], x: m.x, y: m.y });
             else { st.drafts[i].text = m.text; }
           }
           render();
+        } else if (m.t === 'doodle') {
+          var k = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
+          if (k !== -1) { st.drafts[k].strokes = m.strokes || []; render(); }
         } else if (m.t === 'style') {
           var j = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
           if (j !== -1) {
             st.drafts[j].color = m.color; st.drafts[j].ink = m.ink; st.drafts[j].font = m.font;
-            if (!(myDraft && m.gid === st.you)) render();
+            render();
           }
         } else if (m.t === 'gone') {
           st.drafts = (st.drafts || []).filter(function (d) { return d.gid !== m.gid; });
-          if (m.gid === st.you) myDraft = null;
+          if (m.gid === st.you) { mine = null; closeBench(); }
           render();
         } else if (m.t === 'ink') {
           st.notes.push(m.note);
           st.drafts = (st.drafts || []).filter(function (d) { return d.gid !== m.gid; });
-          if (m.gid === st.you) { myDraft = null; say('stuck. someone will find it.'); }
+          if (m.gid === st.you) {
+            mine = null; closeBench();
+            say('stuck. someone will find it.');
+          }
           render();
+        } else if (m.t === 'yours') {
+          peels[m.id] = { t: m.peel, e: m.exp };
+          savePeels();
+          render(); /* the peel button appears */
         } else if (m.t === 'refresh') {
-          fetchState().then(function (s) { var you = st && st.you; st = s; st.you = you; render(); });
+          fetchState().then(function (s) {
+            var you = st && st.you;
+            st.notes = s.notes; st.presence = s.presence;
+            st.you = you;
+            render();
+          });
         } else if (m.t === 'deny') {
           pendingStart = false;
           say(m.reason);
@@ -554,7 +767,6 @@
         sl.href = '?wall=' + res[1].walls[res[1].walls.length - 1].id;
       }
       render();
-      /* ?at=x,y — every spot on the wall is a shareable address */
       var at = (qs.get('at') || '').split(',').map(Number);
       if (at.length === 2 && isFinite(at[0]) && isFinite(at[1])) {
         cam.x = at[0]; cam.y = at[1]; cam.z = 1;
