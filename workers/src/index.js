@@ -169,7 +169,8 @@ export class Wall extends DurableObject {
     }
     const log = (await this.ctx.storage.get('inklog')) || {};
     if (log[att.iph] && Date.now() - log[att.iph] < INK_COOLDOWN_MS) {
-      return ws.send(JSON.stringify({ t: 'deny', reason: 'the wall needs a breath — come back in an hour.' }));
+      const mins = Math.max(1, Math.ceil((INK_COOLDOWN_MS - (Date.now() - log[att.iph])) / 60000));
+      return ws.send(JSON.stringify({ t: 'deny', reason: 'one note an hour — yours can return in ' + mins + ' min.' }));
     }
     const color = COLORS[(notes.length + Object.keys(drafts).length) % COLORS.length];
     const x = this._pos(msg && msg.x, (Math.random() - 0.5) * 600);

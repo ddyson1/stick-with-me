@@ -293,6 +293,10 @@
       moveGhost(e);
       document.addEventListener('pointermove', moveGhost);
       document.addEventListener('pointerup', padUp, { once: true });
+      document.addEventListener('pointercancel', function () {
+        document.removeEventListener('pointermove', moveGhost);
+        if (ghost) { ghost.remove(); ghost = null; }
+      }, { once: true });
     }
     function moveGhost(e) {
       if (!ghost) return;
