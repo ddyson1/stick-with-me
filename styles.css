@@ -65,22 +65,93 @@ body::before {
   mix-blend-mode: overlay;
 }
 
-/* ---- header ---- */
-.hdr { position: relative; z-index: 1; text-align: center; padding: 1.6rem 1rem 0.6rem; }
-.hdr .t {
+/* ---- the front door ---- */
+.hero { position: relative; z-index: 1; text-align: center; padding: clamp(2.2rem, 7vh, 4rem) 1rem 0.4rem; }
+.hero .t {
   font-family: var(--type);
-  font-size: clamp(0.85rem, 2.4vw, 1.05rem);
-  letter-spacing: 0.28em; text-transform: uppercase;
+  font-size: clamp(1.15rem, 3.6vw, 1.7rem);
+  letter-spacing: 0.3em; text-transform: uppercase;
   color: var(--chrome); margin: 0;
 }
-.hdr .p { font-family: var(--hand); font-size: 1.15rem; color: var(--chrome-dim); margin: 0.3rem 0 0; }
-.hdr .p .dot {
+.hero .tag {
+  font-family: var(--hand);
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  color: var(--chrome-dim);
+  margin: 0.5rem 0 0;
+}
+
+.actions {
+  display: flex; justify-content: center; align-items: stretch;
+  gap: clamp(1rem, 3vw, 2rem);
+  flex-wrap: wrap;
+  margin: clamp(1.6rem, 4vh, 2.6rem) auto 0;
+}
+.act {
+  all: unset; cursor: pointer;
+  width: min(15rem, 78vw);
+  padding: 1.1rem 1.2rem 1.3rem;
+  border-radius: 2px;
+  text-align: left;
+  box-shadow: 0 8px 18px var(--note-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.act:hover, .act:focus-visible { transform: scale(1.045) rotate(0deg) !important; box-shadow: 0 14px 30px var(--note-shadow); }
+.act .big { display: block; font-family: var(--hand); font-size: 1.5rem; line-height: 1.2; color: var(--note-ink); }
+.act .small { display: block; margin-top: 0.4rem; font-family: var(--sans); font-size: 0.72rem; letter-spacing: 0.04em; color: rgba(60, 50, 30, 0.6); }
+.act.take { background: #ffe66b; transform: rotate(-1.6deg); }
+.act.leave { background: #ffffff; transform: rotate(1.2deg); }
+
+.hero .p { font-family: var(--hand); font-size: 1.15rem; color: var(--chrome-dim); margin: 1.4rem 0 0; }
+.hero .p .dot {
   display: inline-block; width: 7px; height: 7px; border-radius: 50%;
   background: var(--amber); margin-right: 0.45em;
   animation: pulse 2.4s ease-in-out infinite;
 }
 @keyframes pulse { 0%,100% { opacity: .4 } 50% { opacity: 1 } }
-.hdr .say { font-family: var(--hand); font-size: 1.05rem; color: var(--amber); min-height: 1.4em; margin: 0.2rem 0 0; }
+.hero .say { font-family: var(--hand); font-size: 1.1rem; color: var(--amber); min-height: 1.5em; margin: 0.2rem 0 0; }
+
+/* ---- take-one overlay ---- */
+.veil[hidden] { display: none; }
+.veil {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(10, 8, 5, 0.6);
+  backdrop-filter: blur(3px);
+  display: grid; place-items: center;
+  padding: 1.5rem;
+}
+.bignote {
+  width: min(24rem, 92vw);
+  min-height: 16rem;
+  padding: 2rem 2.1rem 3.4rem;
+  border-radius: 3px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+.bignote .txt {
+  font-family: var(--hand);
+  font-size: clamp(1.5rem, 4vw, 1.9rem);
+  line-height: 1.4;
+  color: var(--note-ink);
+  margin: 0;
+  overflow-wrap: break-word;
+}
+.bignote .sg { font-family: var(--hand); font-size: 1.1rem; color: rgba(60, 50, 30, 0.55); margin: 1.2rem 0 0; }
+.bignote .row {
+  position: absolute; right: 1.2rem; bottom: 1rem; left: 1.2rem;
+  display: flex; justify-content: space-between;
+}
+.bignote .row button {
+  all: unset; cursor: pointer;
+  font-family: var(--sans); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(60, 50, 30, 0.6);
+  padding: 0.3rem 0.2rem;
+}
+.bignote .row button:hover { color: var(--amber-deep); text-decoration: underline; }
+
+/* ---- footer ---- */
+.tail { position: relative; z-index: 1; text-align: center; padding: 1rem 1.2rem 2.6rem; }
+.tail p { font-family: var(--hand); font-size: 1.05rem; color: var(--chrome-faint); margin: 0.2rem 0; }
+.tail .fine { font-family: var(--sans); font-size: 0.68rem; letter-spacing: 0.1em; }
 
 .ops { position: fixed; right: 1.2rem; top: 1.2rem; z-index: 5; display: flex; gap: 0.9rem; align-items: center; }
 .lamp {

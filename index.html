@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>stick with me</title>
-  <meta name="description" content="A wall of notes from strangers. Pull a blank sticky and leave one.">
+  <meta name="description" content="A wall of support from strangers, for strangers. Take what you need; leave what you can.">
 
   <meta property="og:title" content="stick with me">
-  <meta property="og:description" content="A wall of notes from strangers. Pull a blank sticky and leave one.">
+  <meta property="og:description" content="A wall of support from strangers, for strangers. Take what you need; leave what you can.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://stick-with-me.com">
 
@@ -28,14 +28,47 @@
     <button class="lamp" id="lamp" type="button" aria-label="toggle the lamp"></button>
   </div>
 
-  <header class="hdr">
-    <p class="t">stick with me &middot; wall <span id="wallNo">001</span></p>
+  <!-- ============ the front door ============ -->
+  <header class="hero">
+    <h1 class="t">stick with me</h1>
+    <p class="tag">a wall of support from strangers, for strangers.</p>
+
+    <div class="actions">
+      <button class="act take" id="actTake" type="button">
+        <span class="big">take what you need</span>
+        <span class="small">a note from the wall, for you</span>
+      </button>
+      <button class="act leave" id="actLeave" type="button">
+        <span class="big">leave what you can</span>
+        <span class="small">a few kind words for whoever finds them</span>
+      </button>
+    </div>
+
     <p class="p"><span class="dot"></span><span id="pres">the lamp is warming up&hellip;</span></p>
     <p class="say" id="say"></p>
   </header>
 
+  <!-- ============ the wall ============ -->
   <main class="wall" id="wall"></main>
+
   <div class="backbar" id="backbar" hidden><a href="./">back to the open wall</a></div>
+
+  <footer class="tail">
+    <p>wall <span id="wallNo">001</span> &middot; when all its notes are stuck, it is kept, and a fresh wall begins.</p>
+    <p class="fine">no accounts &middot; notes sign &ldquo;a stranger&rdquo; unless you add a name &middot; be gentle</p>
+  </footer>
+
+  <!-- ============ take-one overlay ============ -->
+  <div class="veil" id="veil" hidden>
+    <div class="bignote" id="bignote" role="dialog" aria-label="a note for you">
+      <p class="txt" id="bigTxt"></p>
+      <p class="sg" id="bigSg"></p>
+      <div class="row">
+        <button type="button" id="another">another</button>
+        <button type="button" id="keep">keep it</button>
+      </div>
+    </div>
+  </div>
 
   <script>
   (function () {
@@ -73,12 +106,11 @@
       say._t = setTimeout(function () { sayEl.textContent = ''; }, 4000);
     }
 
-    /* ---- state ---- */
-    var st = null;         /* {you,id,cap,notes,drafts,presence,full,killed} */
+    var st = null;
     var ws = null, wsOk = false, myDraft = null, pendingStart = false;
 
     function presenceLine() {
-      if (isArchive) return 'wall ' + wanted + ', archived — ' + st.notes.length + ' notes';
+      if (isArchive) return 'wall ' + wanted + ', kept — ' + st.notes.length + ' notes';
       if (!wsOk) return 'the lamp is off — the wall is read-only right now';
       var c = st.presence || 1;
       var who = c <= 1 ? 'you are here alone'
@@ -86,6 +118,33 @@
         : (c - 1) + ' strangers are here with you';
       return who + ' · ' + st.notes.length + ' of ' + st.cap + ' notes';
     }
+
+    /* ---- take one ---- */
+    var veil = document.getElementById('veil');
+    function takeOne() {
+      if (!st || !st.notes.length) { say('the wall is bare — be the first to leave one.'); return; }
+      var n = st.notes[Math.floor(Math.random() * st.notes.length)];
+      document.getElementById('bigTxt').textContent = n.text;
+      document.getElementById('bigSg').textContent = '— ' + (n.name || 'a stranger');
+      var bn = document.getElementById('bignote');
+      bn.style.background = n.color || '#ffe66b';
+      bn.style.transform = 'rotate(' + tilt(n.id) + 'deg)';
+      veil.hidden = false;
+    }
+    document.getElementById('actTake').addEventListener('click', takeOne);
+    document.getElementById('another').addEventListener('click', takeOne);
+    document.getElementById('keep').addEventListener('click', function () { veil.hidden = true; });
+    veil.addEventListener('click', function (e) { if (e.target === veil) veil.hidden = true; });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') veil.hidden = true; });
+
+    /* ---- leave one ---- */
+    function startDraft() {
+      if (!wsOk) { say('the lamp is off — writing is closed right now.'); return; }
+      if (myDraft) { myDraft.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      pendingStart = true;
+      send({ t: 'start' });
+    }
+    document.getElementById('actLeave').addEventListener('click', startDraft);
 
     /* ---- render ---- */
     function render() {
@@ -96,14 +155,13 @@
         var d = el('div', 'note' + (n.text.length > 90 ? ' longtext' : ''));
         d.style.background = n.color || '#ffe66b';
         d.style.transform = 'rotate(' + tilt(n.id) + 'deg)';
-        var span = el('span', null, n.text);
-        d.appendChild(span);
+        d.appendChild(el('span', null, n.text));
         d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
         wallEl.appendChild(d);
       });
 
       (st.drafts || []).forEach(function (dr) {
-        if (myDraft && dr.gid === st.you) return; /* mine renders separately */
+        if (myDraft && dr.gid === st.you) return;
         var d = el('div', 'note live');
         d.appendChild(el('span', 'who', '✎ a stranger'));
         var span = el('span', null, dr.text || '');
@@ -115,30 +173,28 @@
       if (myDraft) wallEl.appendChild(myDraft);
 
       if (!isArchive && !st.full) {
-        var blanks = Math.min(4, st.cap - st.notes.length - (st.drafts || []).length - (myDraft ? 1 : 0));
+        var blanks = Math.min(3, st.cap - st.notes.length - (st.drafts || []).length - (myDraft ? 1 : 0));
         for (var i = 0; i < blanks; i++) {
           var b = el('div', 'note blank' + ((i === 0 && wsOk && !myDraft) ? '' : ' quiet'));
           if (i === 0 && wsOk && !myDraft) {
             b.textContent = '+ leave a note';
-            b.addEventListener('click', function () { pendingStart = true; send({ t: 'start' }); });
+            b.addEventListener('click', startDraft);
           } else {
-            b.style.opacity = String(0.55 - i * 0.15);
+            b.style.opacity = String(0.5 - i * 0.15);
           }
           wallEl.appendChild(b);
         }
       }
       if (st.full && !isArchive) {
-        var f = el('div', 'note blank quiet', 'this wall is full — it will be shelved');
-        wallEl.appendChild(f);
+        wallEl.appendChild(el('div', 'note blank quiet', 'this wall is full — it will be kept'));
       }
     }
 
     function makeMyDraft(color) {
       var d = el('div', 'note mine');
-      d.style.background = '#fff';
       var ta = el('textarea');
       ta.maxLength = 300;
-      ta.placeholder = 'say it…';
+      ta.placeholder = 'something kind…';
       var sg = el('input');
       sg.maxLength = 40; sg.type = 'text'; sg.placeholder = '— signed (optional)';
       var stick = el('button', 'stick', 'stick it');
@@ -154,7 +210,10 @@
         setTimeout(function () { send({ t: 'release' }); }, 200);
       });
       d.appendChild(ta); d.appendChild(sg); d.appendChild(stick);
-      setTimeout(function () { ta.focus(); }, 50);
+      setTimeout(function () {
+        ta.focus();
+        d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 60);
       return d;
     }
 
@@ -194,7 +253,7 @@
         } else if (m.t === 'ink') {
           st.notes.push(m.note);
           st.drafts = (st.drafts || []).filter(function (d) { return d.gid !== m.gid; });
-          if (m.gid === st.you) { myDraft = null; say('stuck. thank you.'); }
+          if (m.gid === st.you) { myDraft = null; say('stuck. someone will find it.'); }
           st.full = m.full;
           render();
         } else if (m.t === 'refresh') {
