@@ -104,6 +104,17 @@ export class Wall extends DurableObject {
     return { ok: true, count: notes.length };
   }
 
+  async move(noteId, x, y) {
+    const notes = await this._notes();
+    const n = notes.find((nn) => nn.id === noteId);
+    if (!n) return { ok: false, error: 'no such note' };
+    n.x = this._pos(x, n.x);
+    n.y = this._pos(y, n.y);
+    await this.ctx.storage.put('notes', notes);
+    this._broadcast({ t: 'refresh' });
+    return { ok: true, x: n.x, y: n.y };
+  }
+
   /* ---------- websockets ---------- */
 
   async fetch(request) {
@@ -282,7 +293,7 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
     const m = url.pathname.match(/^\/wall\/(\d{3})(\/live)?$/);
-    const mOwner = url.pathname.match(/^\/wall\/(\d{3})\/(erase|seed)$/);
+    const mOwner = url.pathname.match(/^\/wall\/(\d{3})\/(erase|seed|move)$/);
 
     try {
       if (m && !m[2] && request.method === 'GET') {
@@ -299,8 +310,8 @@ export default {
           return new Response(JSON.stringify({ ok: false, error: 'no' }), { status: 403, headers: { ...J, ...cors } });
         }
         const stub = env.WALL.getByName(mOwner[1]);
-        const out = mOwner[2] === 'erase'
-          ? await stub.erase(String(body.id))
+        const out = mOwner[2] === 'erase' ? await stub.erase(String(body.id))
+          : mOwner[2] === 'move' ? await stub.move(String(body.id), body.x, body.y)
           : await stub.seed(mOwner[1], body.notes || []);
         return new Response(JSON.stringify(out), { headers: { ...J, ...cors } });
       }

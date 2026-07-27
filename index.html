@@ -58,6 +58,7 @@
       <button id="zout" type="button" aria-label="zoom out">&minus;</button>
       <button id="home" type="button" aria-label="back to the notes">&#8962;</button>
     </div>
+    <div class="coords" id="coords" title="where you are — the first note is (0, 0)">0, 0</div>
   </main>
 
   <!-- ============ the pad ============ -->
@@ -80,8 +81,10 @@
     <div class="bignote" id="bignote" role="dialog" aria-label="a note for you">
       <p class="txt" id="bigTxt"></p>
       <p class="sg" id="bigSg"></p>
+      <p class="where" id="bigWhere"></p>
       <div class="row">
         <button type="button" id="another">another</button>
+        <button type="button" id="goThere">go there</button>
         <button type="button" id="keep">keep it</button>
       </div>
     </div>
@@ -134,9 +137,11 @@
     var cam = { x: 0, y: 0, z: 1 };          /* world point at viewport center, zoom */
     var ZMIN = 0.2, ZMAX = 2.2;
 
+    var coordsEl = document.getElementById('coords');
     function applyCam() {
       spaceEl.style.transform =
         'translate(' + (-cam.x * cam.z) + 'px,' + (-cam.y * cam.z) + 'px) scale(' + cam.z + ')';
+      coordsEl.textContent = Math.round(cam.x) + ', ' + Math.round(cam.y);
     }
     function screenToWorld(cx, cy) {
       var r = wallEl.getBoundingClientRect();
@@ -251,8 +256,10 @@
     function takeOne() {
       if (!st || !st.notes.length) { say('the wall is bare — be the first to leave one.'); return; }
       var n = st.notes[Math.floor(Math.random() * st.notes.length)];
+      lastTaken = n;
       document.getElementById('bigTxt').textContent = n.text;
       document.getElementById('bigSg').textContent = '— ' + (n.name || 'a stranger');
+      document.getElementById('bigWhere').textContent = 'stuck at ( ' + Math.round(n.x || 0) + ', ' + Math.round(n.y || 0) + ' )';
       var bn = document.getElementById('bignote');
       bn.className = 'bignote ' + fontClass(n.font);
       bn.style.background = n.color || PAPERS[0];
@@ -260,8 +267,19 @@
       bn.style.transform = 'rotate(' + tilt(n.id) + 'deg)';
       veil.hidden = false;
     }
+    var lastTaken = null;
     document.getElementById('actTake').addEventListener('click', takeOne);
     document.getElementById('another').addEventListener('click', takeOne);
+    document.getElementById('goThere').addEventListener('click', function () {
+      if (!lastTaken) return;
+      veil.hidden = true;
+      cam.x = lastTaken.x || 0; cam.y = lastTaken.y || 0;
+      if (cam.z < 0.8) cam.z = 1;
+      spaceEl.classList.add('glide');
+      setTimeout(function () { spaceEl.classList.remove('glide'); }, 650);
+      applyCam();
+      wallEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     document.getElementById('keep').addEventListener('click', function () { veil.hidden = true; });
     veil.addEventListener('click', function (e) { if (e.target === veil) veil.hidden = true; });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') veil.hidden = true; });
@@ -333,6 +351,7 @@
         d.style.background = n.color || PAPERS[0];
         d.style.color = n.ink || INKS[0];
         place(d, n.x, n.y, n.id);
+        d.title = '( ' + Math.round(n.x || 0) + ', ' + Math.round(n.y || 0) + ' )';
         d.appendChild(el('span', null, n.text));
         d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
         spaceEl.appendChild(d);
@@ -535,7 +554,15 @@
         sl.href = '?wall=' + res[1].walls[res[1].walls.length - 1].id;
       }
       render();
-      goHome(false);
+      /* ?at=x,y — every spot on the wall is a shareable address */
+      var at = (qs.get('at') || '').split(',').map(Number);
+      if (at.length === 2 && isFinite(at[0]) && isFinite(at[1])) {
+        cam.x = at[0]; cam.y = at[1]; cam.z = 1;
+        applyCam();
+        setTimeout(function () { wallEl.scrollIntoView({ behavior: 'smooth' }); }, 400);
+      } else {
+        goHome(false);
+      }
       connect();
     }).catch(function (err) {
       wallEl.className = 'wallerror';
