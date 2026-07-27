@@ -40,21 +40,30 @@
       </button>
       <button class="act leave" id="actLeave" type="button">
         <span class="big">leave what you can</span>
-        <span class="small">a few kind words for whoever finds them</span>
+        <span class="small">or drag a blank from the pad, below left</span>
       </button>
     </div>
 
     <p class="p"><span class="dot"></span><span id="pres">the lamp is warming up&hellip;</span></p>
     <p class="say" id="say"></p>
+    <p class="downhint" aria-hidden="true">the wall &darr;</p>
   </header>
 
-  <!-- ============ the wall ============ -->
-  <main class="wall" id="wall"></main>
+  <!-- ============ the wall (a surface, not a grid) ============ -->
+  <main class="wall" id="wall" aria-label="the wall"></main>
+
+  <!-- ============ the pad ============ -->
+  <div class="pad" id="pad" title="drag a blank onto the wall">
+    <div class="sheet s3"></div>
+    <div class="sheet s2"></div>
+    <div class="sheet s1" id="padTop"><span>drag me</span></div>
+    <p class="padlabel">the pad</p>
+  </div>
 
   <div class="backbar" id="backbar" hidden><a href="./">back to the open wall</a></div>
 
   <footer class="tail">
-    <p>wall <span id="wallNo">001</span> &middot; when all its notes are stuck, it is kept, and a fresh wall begins.</p>
+    <p>wall <span id="wallNo">001</span> &middot; when its 96 notes are stuck, it is kept, and a fresh wall begins.</p>
     <p class="fine">no accounts &middot; notes sign &ldquo;a stranger&rdquo; unless you add a name &middot; be gentle</p>
   </footer>
 
@@ -80,8 +89,9 @@
     var wallEl = document.getElementById('wall');
     var presEl = document.getElementById('pres');
     var sayEl = document.getElementById('say');
+    var padEl = document.getElementById('pad');
     document.getElementById('wallNo').textContent = wanted;
-    if (isArchive) document.getElementById('backbar').hidden = false;
+    if (isArchive) { document.getElementById('backbar').hidden = false; padEl.hidden = true; }
 
     document.getElementById('lamp').addEventListener('click', function () {
       var day = document.documentElement.getAttribute('data-theme') === 'day';
@@ -137,24 +147,68 @@
     veil.addEventListener('click', function (e) { if (e.target === veil) veil.hidden = true; });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') veil.hidden = true; });
 
-    /* ---- leave one ---- */
-    function startDraft() {
+    /* ---- leave one (button path: random spot) ---- */
+    function startDraft(x, y) {
       if (!wsOk) { say('the lamp is off — writing is closed right now.'); return; }
       if (myDraft) { myDraft.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
       pendingStart = true;
-      send({ t: 'start' });
+      send({ t: 'start', x: x, y: y });
     }
-    document.getElementById('actLeave').addEventListener('click', startDraft);
+    document.getElementById('actLeave').addEventListener('click', function () {
+      startDraft(undefined, undefined);
+      wallEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
 
-    /* ---- render ---- */
+    /* ---- the pad: drag a blank onto the wall ---- */
+    var ghost = null;
+    function padDown(e) {
+      if (isArchive || !wsOk || myDraft) {
+        if (myDraft) say('finish your note first.');
+        else if (!wsOk) say('the lamp is off — writing is closed right now.');
+        return;
+      }
+      e.preventDefault();
+      ghost = el('div', 'dragghost');
+      document.body.appendChild(ghost);
+      moveGhost(e);
+      document.addEventListener('pointermove', moveGhost);
+      document.addEventListener('pointerup', padUp, { once: true });
+    }
+    function moveGhost(e) {
+      if (!ghost) return;
+      ghost.style.left = e.clientX + 'px';
+      ghost.style.top = e.clientY + 'px';
+      var r = wallEl.getBoundingClientRect();
+      var over = e.clientY > r.top && e.clientY < r.bottom && e.clientX > r.left && e.clientX < r.right;
+      ghost.classList.toggle('over', over);
+    }
+    function padUp(e) {
+      document.removeEventListener('pointermove', moveGhost);
+      if (!ghost) return;
+      ghost.remove(); ghost = null;
+      var r = wallEl.getBoundingClientRect();
+      if (e.clientY > r.top && e.clientY < r.bottom && e.clientX > r.left && e.clientX < r.right) {
+        var x = (e.clientX - r.left) / r.width;
+        var y = (e.clientY - r.top) / r.height;
+        startDraft(x, y);
+      }
+    }
+    document.getElementById('padTop').addEventListener('pointerdown', padDown);
+
+    /* ---- render (absolute positions on the surface) ---- */
+    function place(d, x, y, seed) {
+      d.style.left = (x * 100) + '%';
+      d.style.top = (y * 100) + '%';
+      d.style.transform = 'translate(-50%,-50%) rotate(' + tilt(seed) + 'deg)';
+    }
     function render() {
       wallEl.textContent = '';
       presEl.textContent = presenceLine();
 
-      st.notes.forEach(function (n) {
+      st.notes.forEach(function (n, i) {
         var d = el('div', 'note' + (n.text.length > 90 ? ' longtext' : ''));
         d.style.background = n.color || '#ffe66b';
-        d.style.transform = 'rotate(' + tilt(n.id) + 'deg)';
+        place(d, n.x != null ? n.x : ((i * 0.13) % 0.8) + 0.1, n.y != null ? n.y : ((i * 0.19) % 0.8) + 0.1, n.id);
         d.appendChild(el('span', null, n.text));
         d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
         wallEl.appendChild(d);
@@ -163,6 +217,7 @@
       (st.drafts || []).forEach(function (dr) {
         if (myDraft && dr.gid === st.you) return;
         var d = el('div', 'note live');
+        place(d, dr.x != null ? dr.x : 0.5, dr.y != null ? dr.y : 0.5, dr.gid);
         d.appendChild(el('span', 'who', '✎ a stranger'));
         var span = el('span', null, dr.text || '');
         d.appendChild(span);
@@ -172,26 +227,16 @@
 
       if (myDraft) wallEl.appendChild(myDraft);
 
-      if (!isArchive && !st.full) {
-        var blanks = Math.min(3, st.cap - st.notes.length - (st.drafts || []).length - (myDraft ? 1 : 0));
-        for (var i = 0; i < blanks; i++) {
-          var b = el('div', 'note blank' + ((i === 0 && wsOk && !myDraft) ? '' : ' quiet'));
-          if (i === 0 && wsOk && !myDraft) {
-            b.textContent = '+ leave a note';
-            b.addEventListener('click', startDraft);
-          } else {
-            b.style.opacity = String(0.5 - i * 0.15);
-          }
-          wallEl.appendChild(b);
-        }
+      if (!st.notes.length && !(st.drafts || []).length && !myDraft) {
+        var e0 = el('p', 'bare', isArchive ? '' : 'a bare wall.\ndrag a blank from the pad and be first.');
+        wallEl.appendChild(e0);
       }
-      if (st.full && !isArchive) {
-        wallEl.appendChild(el('div', 'note blank quiet', 'this wall is full — it will be kept'));
-      }
+      if (st.full && !isArchive) padEl.classList.add('spent');
     }
 
-    function makeMyDraft(color) {
+    function makeMyDraft(color, x, y) {
       var d = el('div', 'note mine');
+      place(d, x != null ? x : 0.5, y != null ? y : 0.5, 'mine');
       var ta = el('textarea');
       ta.maxLength = 300;
       ta.placeholder = 'something kind…';
@@ -239,11 +284,11 @@
           st.presence = m.count; presEl.textContent = presenceLine();
         } else if (m.t === 'draft') {
           if (m.gid === st.you) {
-            if (pendingStart && !myDraft) { myDraft = makeMyDraft(m.color); pendingStart = false; }
+            if (pendingStart && !myDraft) { myDraft = makeMyDraft(m.color, m.x, m.y); pendingStart = false; }
           } else {
             var i = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
-            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color });
-            else st.drafts[i].text = m.text;
+            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color, x: m.x, y: m.y });
+            else { st.drafts[i].text = m.text; }
           }
           render();
         } else if (m.t === 'gone') {

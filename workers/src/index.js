@@ -8,8 +8,11 @@
  *
  * WS protocol (JSON):
  *   s→c: state{you,notes,drafts,presence,cap,killed,full}, presence{count},
- *        draft{gid,text,color}, gone{gid}, ink{note}, deny{reason}
- *   c→s: start, write{text}, sign{name}, release
+ *        draft{gid,text,color,x,y}, gone{gid}, ink{note}, deny{reason}
+ *   c→s: start{x,y}, write{text}, sign{name}, release
+ *
+ * Notes carry x/y (fractions of the wall surface) — strangers place
+ * their own sticky where they want it.
  */
 
 import { DurableObject } from 'cloudflare:workers';
@@ -72,7 +75,7 @@ export class Wall extends DurableObject {
       id: (await this.ctx.storage.get('id')) || '001',
       cap: this._cap(),
       notes,
-      drafts: Object.values(drafts).map((d) => ({ gid: d.gid, text: d.text, color: d.color })),
+      drafts: Object.values(drafts).map((d) => ({ gid: d.gid, text: d.text, color: d.color, x: d.x, y: d.y })),
       presence: this.ctx.getWebSockets().length,
       full: notes.length >= this._cap(),
       killed: this.env.KILLED === 'true'
@@ -130,7 +133,7 @@ export class Wall extends DurableObject {
       return;
     }
 
-    if (msg.t === 'start') return this._start(ws, att);
+    if (msg.t === 'start') return this._start(ws, att, msg);
     if (msg.t === 'write') return this._write(ws, att, msg);
     if (msg.t === 'sign') return this._sign(ws, att, msg);
     if (msg.t === 'release') return this._releaseOrInk(att.g, true);
@@ -146,7 +149,13 @@ export class Wall extends DurableObject {
 
   /* ---------- drafts ---------- */
 
-  async _start(ws, att) {
+  _pos(v, fallback) {
+    const n = Number(v);
+    if (!isFinite(n)) return fallback;
+    return Math.min(0.94, Math.max(0.06, n));
+  }
+
+  async _start(ws, att, msg) {
     const notes = await this._notes();
     const drafts = await this._drafts();
     if (notes.length + Object.keys(drafts).length >= this._cap()) {
@@ -161,13 +170,15 @@ export class Wall extends DurableObject {
       return ws.send(JSON.stringify({ t: 'deny', reason: 'the wall needs a breath — come back in an hour.' }));
     }
     const color = COLORS[(notes.length + Object.keys(drafts).length) % COLORS.length];
+    const x = this._pos(msg && msg.x, 0.2 + Math.random() * 0.6);
+    const y = this._pos(msg && msg.y, 0.2 + Math.random() * 0.6);
     drafts[att.g] = {
-      gid: att.g, iph: att.iph, color, text: '', sign: '',
+      gid: att.g, iph: att.iph, color, text: '', sign: '', x, y,
       started: Date.now(), lastWrite: Date.now()
     };
     await this.ctx.storage.put('drafts', drafts);
     await this.ctx.storage.setAlarm(Date.now() + ALARM_TICK_MS);
-    this._broadcast({ t: 'draft', gid: att.g, text: '', color });
+    this._broadcast({ t: 'draft', gid: att.g, text: '', color, x, y });
   }
 
   async _write(ws, att, msg) {
@@ -182,7 +193,7 @@ export class Wall extends DurableObject {
     d.text = text;
     d.lastWrite = Date.now();
     await this.ctx.storage.put('drafts', drafts);
-    this._broadcast({ t: 'draft', gid: att.g, text, color: d.color }, ws);
+    this._broadcast({ t: 'draft', gid: att.g, text, color: d.color, x: d.x, y: d.y }, ws);
   }
 
   async _sign(ws, att, msg) {
@@ -212,6 +223,7 @@ export class Wall extends DurableObject {
       text: d.text.trim().slice(0, MAX_CHARS),
       name: (d.sign || '').trim() || 'a stranger',
       color: d.color,
+      x: d.x, y: d.y,
       inked: new Date().toISOString()
     };
     notes.push(note);

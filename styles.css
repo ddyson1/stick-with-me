@@ -167,27 +167,34 @@ body::before {
 }
 .shelf-link:hover { color: var(--amber); }
 
-/* ---- the wall ---- */
+/* ---- the wall: a surface, not a grid ---- */
 .wall {
   position: relative; z-index: 1;
-  max-width: 88rem; margin: 0 auto;
-  padding: 1.6rem clamp(1rem, 3vw, 2.5rem) 4rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 1.1rem;
-  align-content: start;
+  height: 150vh;
+  margin: 0.5rem auto 0;
+  max-width: 96rem;
+}
+.wall .bare {
+  position: absolute; left: 50%; top: 30%;
+  transform: translate(-50%, -50%);
+  font-family: var(--hand); font-size: 1.35rem; line-height: 1.6;
+  color: var(--chrome-faint); text-align: center;
+  white-space: pre-line; margin: 0;
 }
 
 .note {
-  position: relative; aspect-ratio: 1 / 1; padding: 0.85rem 0.9rem;
+  position: absolute;
+  width: clamp(8.5rem, 16vw, 11rem);
+  aspect-ratio: 1 / 1;
+  padding: 0.85rem 0.9rem;
   border-radius: 2px;
   font-family: var(--hand); font-size: 1.06rem; line-height: 1.35;
   color: var(--note-ink);
   overflow: hidden;
   box-shadow: 0 6px 14px var(--note-shadow);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: box-shadow 0.18s ease;
 }
-.note:hover { transform: scale(1.05) rotate(0deg) !important; box-shadow: 0 12px 26px var(--note-shadow); z-index: 4; }
+.note:hover { box-shadow: 0 12px 26px var(--note-shadow); z-index: 6; }
 .note .sg {
   position: absolute; bottom: 0.5rem; left: 0.9rem; right: 0.9rem;
   font-size: 0.85rem; color: rgba(60, 50, 30, 0.55);
@@ -235,19 +242,56 @@ body::before {
 }
 .note.mine .stick:hover { text-decoration: underline; }
 
-/* blank stickies */
-.note.blank {
-  background: var(--blank-bg);
-  border: 1.5px dashed var(--blank-line);
-  box-shadow: none;
-  display: grid; place-items: center;
-  color: var(--chrome-faint);
-  font-family: var(--hand); font-size: 1.1rem;
-  cursor: pointer;
+/* ---- the pad: a stack of blanks, bottom left ---- */
+.pad {
+  position: fixed; left: 1.4rem; bottom: 1.6rem; z-index: 40;
+  width: 7.2rem; height: 7.2rem;
 }
-.note.blank:hover { border-color: var(--amber); color: var(--amber); }
-.note.blank.quiet { cursor: default; }
-.note.blank.quiet:hover { border-color: var(--blank-line); color: var(--chrome-faint); }
+.pad .sheet {
+  position: absolute; inset: 0;
+  background: #fffef2;
+  border-radius: 2px;
+  box-shadow: 0 5px 12px var(--note-shadow);
+}
+.pad .s3 { transform: rotate(-3deg) translate(3px, 4px); opacity: 0.75; }
+.pad .s2 { transform: rotate(2deg) translate(-2px, 2px); opacity: 0.9; }
+.pad .s1 {
+  display: grid; place-items: center;
+  cursor: grab; touch-action: none;
+  font-family: var(--hand); font-size: 1.05rem; color: rgba(60, 50, 30, 0.5);
+  transition: transform 0.15s ease;
+}
+.pad .s1:hover { transform: rotate(-1.5deg) scale(1.05); color: var(--amber-deep); }
+.pad .s1:active { cursor: grabbing; }
+.pad .padlabel {
+  position: absolute; left: 0; right: 0; bottom: -1.7rem;
+  text-align: center; margin: 0;
+  font-family: var(--type); font-size: 0.6rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--chrome-faint);
+}
+.pad.spent { opacity: 0.35; pointer-events: none; }
+.pad[hidden] { display: none; }
+
+/* the blank riding the pointer */
+.dragghost {
+  position: fixed; z-index: 60;
+  width: 8.5rem; height: 8.5rem;
+  margin: -4.25rem 0 0 -4.25rem;
+  background: #fffef2;
+  border-radius: 2px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  transform: rotate(-2deg);
+  pointer-events: none;
+  opacity: 0.9;
+}
+.dragghost.over { outline: 2px solid var(--amber); transform: rotate(0.5deg) scale(1.04); }
+
+/* hero down-hint */
+.hero .downhint {
+  margin: 1.2rem 0 0;
+  font-family: var(--type); font-size: 0.62rem; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--chrome-faint);
+}
 
 /* archive back-link */
 .backbar { position: relative; z-index: 1; text-align: center; padding: 0 0 3rem; }
