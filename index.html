@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>stick with me</title>
-  <meta name="description" content="A wall of support from strangers, for strangers. Take what you need; leave what you can.">
+  <meta name="description" content="An endless wall of support from strangers, for strangers. Take what you need; leave what you can.">
 
   <meta property="og:title" content="stick with me">
-  <meta property="og:description" content="A wall of support from strangers, for strangers. Take what you need; leave what you can.">
+  <meta property="og:description" content="An endless wall of support from strangers, for strangers. Take what you need; leave what you can.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://stick-with-me.com">
 
@@ -31,7 +31,7 @@
   <!-- ============ the front door ============ -->
   <header class="hero">
     <h1 class="t">stick with me</h1>
-    <p class="tag">a wall of support from strangers, for strangers.</p>
+    <p class="tag">an endless wall of support from strangers, for strangers.</p>
 
     <div class="actions">
       <button class="act take" id="actTake" type="button">
@@ -46,11 +46,18 @@
 
     <p class="p"><span class="dot"></span><span id="pres">the lamp is warming up&hellip;</span></p>
     <p class="say" id="say"></p>
-    <p class="downhint" aria-hidden="true">the wall &darr;</p>
+    <p class="downhint" aria-hidden="true">the wall &darr; &middot; drag to wander &middot; scroll to zoom</p>
   </header>
 
-  <!-- ============ the wall (a surface, not a grid) ============ -->
-  <main class="wall" id="wall" aria-label="the wall"></main>
+  <!-- ============ the endless wall ============ -->
+  <main class="wall" id="wall" aria-label="the wall">
+    <div class="space" id="space"></div>
+    <div class="wallops">
+      <button id="zin" type="button" aria-label="zoom in">+</button>
+      <button id="zout" type="button" aria-label="zoom out">&minus;</button>
+      <button id="home" type="button" aria-label="back to the notes">&#8962;</button>
+    </div>
+  </main>
 
   <!-- ============ the pad ============ -->
   <div class="pad" id="pad" title="drag a blank onto the wall">
@@ -63,7 +70,7 @@
   <div class="backbar" id="backbar" hidden><a href="./">back to the open wall</a></div>
 
   <footer class="tail">
-    <p>wall <span id="wallNo">001</span> &middot; when its 96 notes are stuck, it is kept, and a fresh wall begins.</p>
+    <p>an endless wall &middot; every note stays where its stranger stuck it.</p>
     <p class="fine">no accounts &middot; notes sign &ldquo;a stranger&rdquo; unless you add a name &middot; be gentle</p>
   </footer>
 
@@ -87,10 +94,10 @@
     var isArchive = qs.has('wall');
 
     var wallEl = document.getElementById('wall');
+    var spaceEl = document.getElementById('space');
     var presEl = document.getElementById('pres');
     var sayEl = document.getElementById('say');
     var padEl = document.getElementById('pad');
-    document.getElementById('wallNo').textContent = wanted;
     if (isArchive) { document.getElementById('backbar').hidden = false; padEl.hidden = true; }
 
     document.getElementById('lamp').addEventListener('click', function () {
@@ -116,6 +123,109 @@
       say._t = setTimeout(function () { sayEl.textContent = ''; }, 4000);
     }
 
+    /* ================= the camera ================= */
+    var cam = { x: 0, y: 0, z: 1 };          /* world point at viewport center, zoom */
+    var ZMIN = 0.2, ZMAX = 2.2;
+
+    function applyCam() {
+      spaceEl.style.transform =
+        'translate(' + (-cam.x * cam.z) + 'px,' + (-cam.y * cam.z) + 'px) scale(' + cam.z + ')';
+    }
+    function screenToWorld(cx, cy) {
+      var r = wallEl.getBoundingClientRect();
+      return {
+        x: (cx - (r.left + r.width / 2)) / cam.z + cam.x,
+        y: (cy - (r.top + r.height / 2)) / cam.z + cam.y
+      };
+    }
+    function zoomAt(cx, cy, factor) {
+      var before = screenToWorld(cx, cy);
+      cam.z = Math.min(ZMAX, Math.max(ZMIN, cam.z * factor));
+      var after = screenToWorld(cx, cy);
+      cam.x += before.x - after.x;
+      cam.y += before.y - after.y;
+      applyCam();
+    }
+
+    /* camera home: the living center — centroid of the most recent notes */
+    function goHome(animate) {
+      var pts = (st && st.notes.length ? st.notes.slice(-24) : [])
+        .concat((st && st.drafts) || []);
+      if (!pts.length) { cam = { x: 0, y: 0, z: 1 }; }
+      else {
+        var minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9, sx = 0, sy = 0;
+        pts.forEach(function (p) {
+          var px = p.x || 0, py = p.y || 0;
+          sx += px; sy += py;
+          if (px < minx) minx = px; if (px > maxx) maxx = px;
+          if (py < miny) miny = py; if (py > maxy) maxy = py;
+        });
+        var r = wallEl.getBoundingClientRect();
+        var spanX = (maxx - minx) + 700, spanY = (maxy - miny) + 700;
+        cam.x = sx / pts.length;
+        cam.y = sy / pts.length;
+        cam.z = Math.min(1.1, Math.max(ZMIN, Math.min(r.width / spanX, r.height / spanY)));
+      }
+      if (animate) {
+        spaceEl.classList.add('glide');
+        setTimeout(function () { spaceEl.classList.remove('glide'); }, 650);
+      }
+      applyCam();
+    }
+    document.getElementById('home').addEventListener('click', function () { goHome(true); });
+    document.getElementById('zin').addEventListener('click', function () {
+      var r = wallEl.getBoundingClientRect();
+      zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.3);
+    });
+    document.getElementById('zout').addEventListener('click', function () {
+      var r = wallEl.getBoundingClientRect();
+      zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.3);
+    });
+
+    /* pan: drag the plaster (not a note); pinch: two pointers; wheel: zoom */
+    var pans = {};   /* active pointers on the wall background */
+    var pinch = null;
+    wallEl.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('.note') || e.target.closest('.wallops')) return;
+      pans[e.pointerId] = { x: e.clientX, y: e.clientY };
+      wallEl.setPointerCapture(e.pointerId);
+      var ids = Object.keys(pans);
+      if (ids.length === 2) {
+        var a = pans[ids[0]], b = pans[ids[1]];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) };
+      }
+      wallEl.classList.add('grabbing');
+    });
+    wallEl.addEventListener('pointermove', function (e) {
+      var p = pans[e.pointerId];
+      if (!p) return;
+      var ids = Object.keys(pans);
+      if (ids.length === 1) {
+        cam.x -= (e.clientX - p.x) / cam.z;
+        cam.y -= (e.clientY - p.y) / cam.z;
+        applyCam();
+      }
+      p.x = e.clientX; p.y = e.clientY;
+      if (ids.length === 2 && pinch) {
+        var a = pans[ids[0]], b = pans[ids[1]];
+        var d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d > 0 && pinch.d > 0) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, d / pinch.d);
+        pinch.d = d;
+      }
+    });
+    function panEnd(e) {
+      delete pans[e.pointerId];
+      if (Object.keys(pans).length < 2) pinch = null;
+      if (!Object.keys(pans).length) wallEl.classList.remove('grabbing');
+    }
+    wallEl.addEventListener('pointerup', panEnd);
+    wallEl.addEventListener('pointercancel', panEnd);
+    wallEl.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.12 : 1 / 1.12);
+    }, { passive: false });
+
+    /* ================= state ================= */
     var st = null;
     var ws = null, wsOk = false, myDraft = null, pendingStart = false;
 
@@ -126,7 +236,7 @@
       var who = c <= 1 ? 'you are here alone'
         : c === 2 ? 'one stranger is here with you'
         : (c - 1) + ' strangers are here with you';
-      return who + ' · ' + st.notes.length + ' of ' + st.cap + ' notes';
+      return who + ' · ' + st.notes.length + ' notes on the wall';
     }
 
     /* ---- take one ---- */
@@ -147,19 +257,20 @@
     veil.addEventListener('click', function (e) { if (e.target === veil) veil.hidden = true; });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') veil.hidden = true; });
 
-    /* ---- leave one (button path: random spot) ---- */
+    /* ---- leave one ---- */
     function startDraft(x, y) {
       if (!wsOk) { say('the lamp is off — writing is closed right now.'); return; }
-      if (myDraft) { myDraft.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      if (myDraft) { wallEl.scrollIntoView({ behavior: 'smooth' }); return; }
       pendingStart = true;
       send({ t: 'start', x: x, y: y });
     }
     document.getElementById('actLeave').addEventListener('click', function () {
-      startDraft(undefined, undefined);
+      /* near the current camera center, slightly off so it feels placed */
+      startDraft(cam.x + (Math.random() - 0.5) * 240, cam.y + (Math.random() - 0.5) * 240);
       wallEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    /* ---- the pad: drag a blank onto the wall ---- */
+    /* ---- the pad ---- */
     var ghost = null;
     function padDown(e) {
       if (isArchive || !wsOk || myDraft) {
@@ -188,55 +299,54 @@
       ghost.remove(); ghost = null;
       var r = wallEl.getBoundingClientRect();
       if (e.clientY > r.top && e.clientY < r.bottom && e.clientX > r.left && e.clientX < r.right) {
-        var x = (e.clientX - r.left) / r.width;
-        var y = (e.clientY - r.top) / r.height;
-        startDraft(x, y);
+        var w = screenToWorld(e.clientX, e.clientY);
+        startDraft(w.x, w.y);
       }
     }
     document.getElementById('padTop').addEventListener('pointerdown', padDown);
 
-    /* ---- render (absolute positions on the surface) ---- */
+    /* ================= render ================= */
     function place(d, x, y, seed) {
-      d.style.left = (x * 100) + '%';
-      d.style.top = (y * 100) + '%';
+      d.style.left = (x || 0) + 'px';
+      d.style.top = (y || 0) + 'px';
       d.style.transform = 'translate(-50%,-50%) rotate(' + tilt(seed) + 'deg)';
     }
     function render() {
-      wallEl.textContent = '';
+      spaceEl.textContent = '';
       presEl.textContent = presenceLine();
 
-      st.notes.forEach(function (n, i) {
+      st.notes.forEach(function (n) {
         var d = el('div', 'note' + (n.text.length > 90 ? ' longtext' : ''));
         d.style.background = n.color || '#ffe66b';
-        place(d, n.x != null ? n.x : ((i * 0.13) % 0.8) + 0.1, n.y != null ? n.y : ((i * 0.19) % 0.8) + 0.1, n.id);
+        place(d, n.x, n.y, n.id);
         d.appendChild(el('span', null, n.text));
         d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
-        wallEl.appendChild(d);
+        spaceEl.appendChild(d);
       });
 
       (st.drafts || []).forEach(function (dr) {
         if (myDraft && dr.gid === st.you) return;
         var d = el('div', 'note live');
-        place(d, dr.x != null ? dr.x : 0.5, dr.y != null ? dr.y : 0.5, dr.gid);
+        place(d, dr.x, dr.y, dr.gid);
         d.appendChild(el('span', 'who', '✎ a stranger'));
         var span = el('span', null, dr.text || '');
         d.appendChild(span);
         span.appendChild(el('span', 'caret'));
-        wallEl.appendChild(d);
+        spaceEl.appendChild(d);
       });
 
-      if (myDraft) wallEl.appendChild(myDraft);
+      if (myDraft) spaceEl.appendChild(myDraft);
 
       if (!st.notes.length && !(st.drafts || []).length && !myDraft) {
-        var e0 = el('p', 'bare', isArchive ? '' : 'a bare wall.\ndrag a blank from the pad and be first.');
-        wallEl.appendChild(e0);
+        var e0 = el('p', 'bare', isArchive ? '' : 'a bare wall, going on forever.\ndrag a blank from the pad and be first.');
+        e0.style.left = '0px'; e0.style.top = '0px';
+        spaceEl.appendChild(e0);
       }
-      if (st.full && !isArchive) padEl.classList.add('spent');
     }
 
     function makeMyDraft(color, x, y) {
       var d = el('div', 'note mine');
-      place(d, x != null ? x : 0.5, y != null ? y : 0.5, 'mine');
+      place(d, x, y, 'mine');
       var ta = el('textarea');
       ta.maxLength = 300;
       ta.placeholder = 'something kind…';
@@ -245,6 +355,9 @@
       var stick = el('button', 'stick', 'stick it');
       stick.type = 'button';
       var t = null;
+      ['pointerdown'].forEach(function (ev) {
+        d.addEventListener(ev, function (e) { e.stopPropagation(); });
+      });
       ta.addEventListener('input', function () {
         clearTimeout(t);
         t = setTimeout(function () { send({ t: 'write', text: ta.value }); }, 250);
@@ -255,14 +368,17 @@
         setTimeout(function () { send({ t: 'release' }); }, 200);
       });
       d.appendChild(ta); d.appendChild(sg); d.appendChild(stick);
-      setTimeout(function () {
-        ta.focus();
-        d.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 60);
+      /* glide the camera to the new note */
+      cam.x = x; cam.y = y;
+      if (cam.z < 0.8) cam.z = 1;
+      spaceEl.classList.add('glide');
+      setTimeout(function () { spaceEl.classList.remove('glide'); }, 650);
+      applyCam();
+      setTimeout(function () { ta.focus(); }, 80);
       return d;
     }
 
-    /* ---- live ---- */
+    /* ================= live ================= */
     function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
 
     function connect() {
@@ -271,15 +387,17 @@
       ws.onopen = function () { wsOk = true; };
       ws.onclose = function () {
         wsOk = false; myDraft = null;
-        render();
+        if (st) render();
         setTimeout(connect, 3000);
       };
       ws.onmessage = function (evt) {
         var m; try { m = JSON.parse(evt.data); } catch (_) { return; }
         if (m.t === 'state') {
+          var first = !st || !st.you;
           var you = m.you;
           st = m; st.you = you;
           render();
+          if (first) goHome(false);
         } else if (m.t === 'presence') {
           st.presence = m.count; presEl.textContent = presenceLine();
         } else if (m.t === 'draft') {
@@ -299,7 +417,6 @@
           st.notes.push(m.note);
           st.drafts = (st.drafts || []).filter(function (d) { return d.gid !== m.gid; });
           if (m.gid === st.you) { myDraft = null; say('stuck. someone will find it.'); }
-          st.full = m.full;
           render();
         } else if (m.t === 'refresh') {
           fetchState().then(function (s) { var you = st && st.you; st = s; st.you = you; render(); });
@@ -310,7 +427,7 @@
       };
     }
 
-    /* ---- boot ---- */
+    /* ================= boot ================= */
     function fetchState() {
       if (WORKER_URL && !isArchive) {
         return fetch(WORKER_URL + '/wall/' + wanted).then(function (r) {
@@ -333,13 +450,13 @@
       st = res[0];
       st.notes = st.notes || [];
       st.drafts = st.drafts || [];
-      st.cap = st.cap || 96;
       if (res[1].walls && res[1].walls.length) {
         var sl = document.getElementById('shelfLink');
         sl.hidden = false;
         sl.href = '?wall=' + res[1].walls[res[1].walls.length - 1].id;
       }
       render();
+      goHome(false);
       connect();
     }).catch(function (err) {
       wallEl.className = 'wallerror';

@@ -167,34 +167,59 @@ body::before {
 }
 .shelf-link:hover { color: var(--amber); }
 
-/* ---- the wall: a surface, not a grid ---- */
+/* ---- the endless wall: a camera over a boundless surface ---- */
 .wall {
   position: relative; z-index: 1;
-  height: 150vh;
-  margin: 0.5rem auto 0;
-  max-width: 96rem;
+  height: 100vh;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
+.wall.grabbing { cursor: grabbing; }
+.space {
+  position: absolute; left: 50%; top: 50%;
+  width: 0; height: 0;               /* pure origin — children are world-positioned */
+  will-change: transform;
+}
+.space.glide { transition: transform 600ms cubic-bezier(0.25, 0.8, 0.3, 1); }
 .wall .bare {
-  position: absolute; left: 50%; top: 30%;
+  position: absolute;
   transform: translate(-50%, -50%);
   font-family: var(--hand); font-size: 1.35rem; line-height: 1.6;
   color: var(--chrome-faint); text-align: center;
   white-space: pre-line; margin: 0;
+  width: 22rem;
 }
+
+.wallops {
+  position: absolute; right: 1.2rem; bottom: 1.2rem; z-index: 8;
+  display: flex; flex-direction: column; gap: 0.45rem;
+}
+.wallops button {
+  all: unset; cursor: pointer;
+  width: 2.1rem; height: 2.1rem;
+  display: grid; place-items: center;
+  font-family: var(--type); font-size: 0.95rem;
+  color: var(--chrome-dim);
+  background: var(--blank-bg);
+  border: 1px solid var(--blank-line);
+  border-radius: 4px;
+}
+.wallops button:hover { color: var(--amber); border-color: var(--amber); }
 
 .note {
   position: absolute;
-  width: clamp(8.5rem, 16vw, 11rem);
-  aspect-ratio: 1 / 1;
-  padding: 0.85rem 0.9rem;
+  width: 170px; height: 170px;
+  padding: 14px 15px;
   border-radius: 2px;
-  font-family: var(--hand); font-size: 1.06rem; line-height: 1.35;
+  font-family: var(--hand); font-size: 17px; line-height: 1.35;
   color: var(--note-ink);
   overflow: hidden;
   box-shadow: 0 6px 14px var(--note-shadow);
-  transition: box-shadow 0.18s ease;
 }
-.note:hover { box-shadow: 0 12px 26px var(--note-shadow); z-index: 6; }
+.note:hover { z-index: 6; }
 .note .sg {
   position: absolute; bottom: 0.5rem; left: 0.9rem; right: 0.9rem;
   font-size: 0.85rem; color: rgba(60, 50, 30, 0.55);

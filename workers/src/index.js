@@ -77,7 +77,7 @@ export class Wall extends DurableObject {
       notes,
       drafts: Object.values(drafts).map((d) => ({ gid: d.gid, text: d.text, color: d.color, x: d.x, y: d.y })),
       presence: this.ctx.getWebSockets().length,
-      full: notes.length >= this._cap(),
+      full: false, /* an endless wall does not fill */
       killed: this.env.KILLED === 'true'
     };
   }
@@ -149,18 +149,16 @@ export class Wall extends DurableObject {
 
   /* ---------- drafts ---------- */
 
+  /* world coordinates — the wall is endless; only absurd values are rejected */
   _pos(v, fallback) {
     const n = Number(v);
     if (!isFinite(n)) return fallback;
-    return Math.min(0.94, Math.max(0.06, n));
+    return Math.min(50000, Math.max(-50000, n));
   }
 
   async _start(ws, att, msg) {
     const notes = await this._notes();
     const drafts = await this._drafts();
-    if (notes.length + Object.keys(drafts).length >= this._cap()) {
-      return ws.send(JSON.stringify({ t: 'deny', reason: 'this wall is full.' }));
-    }
     if (drafts[att.g]) return; /* already drafting */
     if (Object.values(drafts).some((d) => d.iph === att.iph)) {
       return ws.send(JSON.stringify({ t: 'deny', reason: 'one note at a time.' }));
@@ -170,8 +168,8 @@ export class Wall extends DurableObject {
       return ws.send(JSON.stringify({ t: 'deny', reason: 'the wall needs a breath — come back in an hour.' }));
     }
     const color = COLORS[(notes.length + Object.keys(drafts).length) % COLORS.length];
-    const x = this._pos(msg && msg.x, 0.2 + Math.random() * 0.6);
-    const y = this._pos(msg && msg.y, 0.2 + Math.random() * 0.6);
+    const x = this._pos(msg && msg.x, (Math.random() - 0.5) * 600);
+    const y = this._pos(msg && msg.y, (Math.random() - 0.5) * 600);
     drafts[att.g] = {
       gid: att.g, iph: att.iph, color, text: '', sign: '', x, y,
       started: Date.now(), lastWrite: Date.now()
@@ -232,7 +230,7 @@ export class Wall extends DurableObject {
     const drafts = await this._drafts();
     delete drafts[d.gid];
     await this.ctx.storage.put({ notes, inklog: log, drafts });
-    this._broadcast({ t: 'ink', note, gid: d.gid, full: notes.length >= this._cap() });
+    this._broadcast({ t: 'ink', note, gid: d.gid, full: false });
   }
 
   async alarm() {
