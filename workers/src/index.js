@@ -18,7 +18,10 @@
 import { DurableObject } from 'cloudflare:workers';
 
 const BANNED = ['viagra', 'casino', 'crypto giveaway', 'http://', 'https://'];
-const COLORS = ['#ffe66b', '#ffc6d2', '#c3ecff', '#d6f2b6', '#ffd9a1', '#e6d4ff'];
+/* the studio palettes — customization is allowlisted, never free-form */
+const COLORS = ['#ffe066', '#ff9fb0', '#8ed6ff', '#b6f2a8', '#ffc78a', '#d9b8ff', '#ffffff'];
+const INKS = ['#2c2d30', '#2456d6', '#c23b57', '#1e7a46', '#6b3fb8'];
+const FONTS = ['hand', 'type', 'plain'];
 const MAX_CHARS = 300;                    /* a sticky, not an essay */
 const INK_IDLE_MS = 2 * 60 * 1000;
 const EMPTY_DRAFT_MS = 90 * 1000;
@@ -75,7 +78,7 @@ export class Wall extends DurableObject {
       id: (await this.ctx.storage.get('id')) || '001',
       cap: this._cap(),
       notes,
-      drafts: Object.values(drafts).map((d) => ({ gid: d.gid, text: d.text, color: d.color, x: d.x, y: d.y })),
+      drafts: Object.values(drafts).map((d) => ({ gid: d.gid, text: d.text, color: d.color, ink: d.ink, font: d.font, x: d.x, y: d.y })),
       presence: this.ctx.getWebSockets().length,
       full: false, /* an endless wall does not fill */
       killed: this.env.KILLED === 'true'
@@ -135,6 +138,7 @@ export class Wall extends DurableObject {
 
     if (msg.t === 'start') return this._start(ws, att, msg);
     if (msg.t === 'write') return this._write(ws, att, msg);
+    if (msg.t === 'style') return this._style(ws, att, msg);
     if (msg.t === 'sign') return this._sign(ws, att, msg);
     if (msg.t === 'release') return this._releaseOrInk(att.g, true);
   }
@@ -171,12 +175,13 @@ export class Wall extends DurableObject {
     const x = this._pos(msg && msg.x, (Math.random() - 0.5) * 600);
     const y = this._pos(msg && msg.y, (Math.random() - 0.5) * 600);
     drafts[att.g] = {
-      gid: att.g, iph: att.iph, color, text: '', sign: '', x, y,
+      gid: att.g, iph: att.iph, color, ink: INKS[0], font: FONTS[0],
+      text: '', sign: '', x, y,
       started: Date.now(), lastWrite: Date.now()
     };
     await this.ctx.storage.put('drafts', drafts);
     await this.ctx.storage.setAlarm(Date.now() + ALARM_TICK_MS);
-    this._broadcast({ t: 'draft', gid: att.g, text: '', color, x, y });
+    this._broadcast({ t: 'draft', gid: att.g, text: '', color, ink: INKS[0], font: FONTS[0], x, y });
   }
 
   async _write(ws, att, msg) {
@@ -191,7 +196,18 @@ export class Wall extends DurableObject {
     d.text = text;
     d.lastWrite = Date.now();
     await this.ctx.storage.put('drafts', drafts);
-    this._broadcast({ t: 'draft', gid: att.g, text, color: d.color, x: d.x, y: d.y }, ws);
+    this._broadcast({ t: 'draft', gid: att.g, text, color: d.color, ink: d.ink, font: d.font, x: d.x, y: d.y }, ws);
+  }
+
+  async _style(ws, att, msg) {
+    const drafts = await this._drafts();
+    const d = drafts[att.g];
+    if (!d) return;
+    if (msg.color && COLORS.includes(msg.color)) d.color = msg.color;
+    if (msg.ink && INKS.includes(msg.ink)) d.ink = msg.ink;
+    if (msg.font && FONTS.includes(msg.font)) d.font = msg.font;
+    await this.ctx.storage.put('drafts', drafts);
+    this._broadcast({ t: 'style', gid: att.g, color: d.color, ink: d.ink, font: d.font }, ws);
   }
 
   async _sign(ws, att, msg) {
@@ -220,7 +236,7 @@ export class Wall extends DurableObject {
       id: crypto.randomUUID().slice(0, 8),
       text: d.text.trim().slice(0, MAX_CHARS),
       name: (d.sign || '').trim() || 'a stranger',
-      color: d.color,
+      color: d.color, ink: d.ink, font: d.font,
       x: d.x, y: d.y,
       inked: new Date().toISOString()
     };

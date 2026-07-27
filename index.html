@@ -16,8 +16,9 @@
   <link rel="stylesheet" href="styles.css">
   <script>
     (function () {
+      /* day studio is the default; the lamp turns it to night */
       var t = localStorage.getItem('swm_theme');
-      if (t === 'day') document.documentElement.setAttribute('data-theme', 'day');
+      if (t === 'night') document.documentElement.setAttribute('data-theme', 'night');
     })();
   </script>
 </head>
@@ -101,10 +102,16 @@
     if (isArchive) { document.getElementById('backbar').hidden = false; padEl.hidden = true; }
 
     document.getElementById('lamp').addEventListener('click', function () {
-      var day = document.documentElement.getAttribute('data-theme') === 'day';
-      if (day) { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('swm_theme', 'night'); }
-      else { document.documentElement.setAttribute('data-theme', 'day'); localStorage.setItem('swm_theme', 'day'); }
+      var night = document.documentElement.getAttribute('data-theme') === 'night';
+      if (night) { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('swm_theme', 'day'); }
+      else { document.documentElement.setAttribute('data-theme', 'night'); localStorage.setItem('swm_theme', 'night'); }
     });
+
+    /* studio palettes — must mirror the engine's allowlists */
+    var PAPERS = ['#ffe066', '#ff9fb0', '#8ed6ff', '#b6f2a8', '#ffc78a', '#d9b8ff', '#ffffff'];
+    var INKS = ['#2c2d30', '#2456d6', '#c23b57', '#1e7a46', '#6b3fb8'];
+    var FONTS = ['hand', 'type', 'plain'];
+    function fontClass(f) { return 'f-' + (FONTS.indexOf(f) !== -1 ? f : 'hand'); }
 
     function el(tag, cls, text) {
       var d = document.createElement(tag);
@@ -247,7 +254,9 @@
       document.getElementById('bigTxt').textContent = n.text;
       document.getElementById('bigSg').textContent = '— ' + (n.name || 'a stranger');
       var bn = document.getElementById('bignote');
-      bn.style.background = n.color || '#ffe66b';
+      bn.className = 'bignote ' + fontClass(n.font);
+      bn.style.background = n.color || PAPERS[0];
+      document.getElementById('bigTxt').style.color = n.ink || INKS[0];
       bn.style.transform = 'rotate(' + tilt(n.id) + 'deg)';
       veil.hidden = false;
     }
@@ -316,8 +325,9 @@
       presEl.textContent = presenceLine();
 
       st.notes.forEach(function (n) {
-        var d = el('div', 'note' + (n.text.length > 90 ? ' longtext' : ''));
-        d.style.background = n.color || '#ffe66b';
+        var d = el('div', 'note ' + fontClass(n.font) + (n.text.length > 90 ? ' longtext' : ''));
+        d.style.background = n.color || PAPERS[0];
+        d.style.color = n.ink || INKS[0];
         place(d, n.x, n.y, n.id);
         d.appendChild(el('span', null, n.text));
         d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
@@ -326,7 +336,9 @@
 
       (st.drafts || []).forEach(function (dr) {
         if (myDraft && dr.gid === st.you) return;
-        var d = el('div', 'note live');
+        var d = el('div', 'note live ' + fontClass(dr.font));
+        d.style.background = dr.color || '#ffffff';
+        d.style.color = dr.ink || INKS[0];
         place(d, dr.x, dr.y, dr.gid);
         d.appendChild(el('span', 'who', '✎ a stranger'));
         var span = el('span', null, dr.text || '');
@@ -345,7 +357,9 @@
     }
 
     function makeMyDraft(color, x, y) {
-      var d = el('div', 'note mine');
+      var d = el('div', 'note mine f-hand');
+      d.style.background = color || '#ffffff';
+      d.style.color = INKS[0];
       place(d, x, y, 'mine');
       var ta = el('textarea');
       ta.maxLength = 300;
@@ -368,6 +382,61 @@
         setTimeout(function () { send({ t: 'release' }); }, 200);
       });
       d.appendChild(ta); d.appendChild(sg); d.appendChild(stick);
+
+      /* the tray: paper, ink, hand — your note, your little design.
+         Sends coalesce so rapid clicks survive the server's msg throttle. */
+      var cur = { color: color || '#ffffff', ink: INKS[0], font: 'hand' };
+      var styleT = null;
+      function sendStyle() {
+        clearTimeout(styleT);
+        styleT = setTimeout(function () {
+          send({ t: 'style', color: cur.color, ink: cur.ink, font: cur.font });
+        }, 250);
+      }
+      var tray = el('div', 'tray');
+      var rowP = el('div', 'row'), rowI = el('div', 'row'), rowF = el('div', 'row');
+      PAPERS.forEach(function (p, i) {
+        var s = el('button', 'swatch' + (p === (color || '#ffffff') ? ' on' : ''));
+        s.type = 'button'; s.style.background = p;
+        s.setAttribute('aria-label', 'paper colour ' + (i + 1));
+        s.addEventListener('click', function () {
+          d.style.background = p;
+          rowP.querySelectorAll('.swatch').forEach(function (x2) { x2.classList.remove('on'); });
+          s.classList.add('on');
+          cur.color = p; sendStyle();
+        });
+        rowP.appendChild(s);
+      });
+      INKS.forEach(function (ink, i) {
+        var s = el('button', 'swatch' + (i === 0 ? ' on' : ''));
+        s.type = 'button'; s.style.background = ink;
+        s.setAttribute('aria-label', 'ink colour ' + (i + 1));
+        s.addEventListener('click', function () {
+          d.style.color = ink;
+          rowI.querySelectorAll('.swatch').forEach(function (x2) { x2.classList.remove('on'); });
+          s.classList.add('on');
+          cur.ink = ink; sendStyle();
+        });
+        rowI.appendChild(s);
+      });
+      FONTS.forEach(function (f, i) {
+        var b = el('button', 'fbtn ' + f + (i === 0 ? ' on' : ''), 'Aa');
+        b.type = 'button';
+        b.setAttribute('aria-label', 'hand: ' + f);
+        b.addEventListener('click', function () {
+          d.classList.remove('f-hand', 'f-type', 'f-plain');
+          d.classList.add('f-' + f);
+          rowF.querySelectorAll('.fbtn').forEach(function (x2) { x2.classList.remove('on'); });
+          b.classList.add('on');
+          cur.font = f; sendStyle();
+        });
+        rowF.appendChild(b);
+      });
+      tray.appendChild(rowP); tray.appendChild(rowI); tray.appendChild(rowF);
+      ['pointerdown'].forEach(function (ev) {
+        tray.addEventListener(ev, function (e) { e.stopPropagation(); });
+      });
+      d.appendChild(tray);
       /* glide the camera to the new note */
       cam.x = x; cam.y = y;
       if (cam.z < 0.8) cam.z = 1;
@@ -405,10 +474,16 @@
             if (pendingStart && !myDraft) { myDraft = makeMyDraft(m.color, m.x, m.y); pendingStart = false; }
           } else {
             var i = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
-            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color, x: m.x, y: m.y });
+            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color, ink: m.ink, font: m.font, x: m.x, y: m.y });
             else { st.drafts[i].text = m.text; }
           }
           render();
+        } else if (m.t === 'style') {
+          var j = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
+          if (j !== -1) {
+            st.drafts[j].color = m.color; st.drafts[j].ink = m.ink; st.drafts[j].font = m.font;
+            if (!(myDraft && m.gid === st.you)) render();
+          }
         } else if (m.t === 'gone') {
           st.drafts = (st.drafts || []).filter(function (d) { return d.gid !== m.gid; });
           if (m.gid === st.you) myDraft = null;

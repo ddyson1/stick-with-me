@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>stick with me — worlds</title>
+<style>
+@font-face{font-family:"Caveat";src:url(data:font/woff2;base64,__CAVEAT__) format("woff2");font-display:swap}
+@font-face{font-family:"Special Elite";src:url(data:font/woff2;base64,__ELITE__) format("woff2");font-display:swap}
+:root{--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#0e0f12;color:#e9eaec;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.cap{max-width:46rem;margin:0 auto;padding:clamp(2.2rem,6vw,3.4rem) 1.4rem 1.1rem}
+.cap .n{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:#6b727c}
+.cap h2{margin:.4rem 0 .5rem;font-size:1.35rem;font-weight:600}
+.cap p{margin:0;color:#9aa0aa;font-size:.92rem;line-height:1.6}
+.cap b{color:#e9eaec;font-weight:600}
+.frame{position:relative;height:88vh;min-height:560px;overflow:hidden;
+  border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)}
+.hd{position:absolute;top:1.3rem;left:0;right:0;text-align:center;z-index:5}
+.note{position:absolute;width:150px;height:150px;padding:12px 13px;border-radius:2px;
+  font-family:"Caveat",cursive;font-size:15.5px;line-height:1.35;overflow:hidden}
+.note .sg{position:absolute;bottom:8px;left:13px;right:13px;font-size:12.5px;opacity:.55}
+.caret{display:inline-block;width:2px;height:1em;vertical-align:text-bottom;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.who{position:absolute;top:5px;right:8px;font-family:var(--sans);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.padm{position:absolute;left:1.4rem;bottom:1.6rem;width:96px;height:96px}
+.padm .sh{position:absolute;inset:0;border-radius:2px}
+.padm .lbl{position:absolute;left:0;right:0;bottom:-1.5rem;text-align:center;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;opacity:.6;font-family:"Special Elite"}
+.foot{padding:2.4rem 1.4rem 3.6rem;text-align:center;color:#6b727c;font-size:.78rem}
+
+/* ===== A · CORKBOARD ===== */
+.fA{background:
+  radial-gradient(120% 80% at 50% 0%,rgba(255,240,200,.12),transparent 55%),
+  repeating-conic-gradient(#a97e4f 0 25%, #a1774a 0 50%) 0 0/26px 26px, #a97e4f}
+.fA::after{content:"";position:absolute;inset:0;opacity:.5;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E")}
+.fA .hd .t{font-family:"Special Elite";font-size:1rem;letter-spacing:.26em;color:#3d2a17;text-transform:uppercase}
+.fA .hd .p{font-family:"Caveat",cursive;font-size:1.1rem;color:#5c4326;margin-top:.15rem}
+.fA .note{background:#fdf8ea;color:#3a3527;box-shadow:0 5px 10px rgba(50,30,10,.35)}
+.fA .note::before{content:"";position:absolute;top:6px;left:50%;width:11px;height:11px;border-radius:50%;
+  transform:translateX(-50%);background:radial-gradient(circle at 35% 30%,#ff7b6b,#c62f1e);box-shadow:0 2px 3px rgba(0,0,0,.4)}
+.fA .n2{background:#eef3e2}.fA .n3{background:#fde9e2}
+.fA .live{outline:2px solid #c62f1e;background:#fff}
+.fA .live .caret{background:#c62f1e}.fA .who{color:#c62f1e}
+.fA .padm .sh{background:#fdf8ea;box-shadow:0 4px 9px rgba(50,30,10,.4)}
+.fA .padm .lbl{color:#3d2a17}
+
+/* ===== B · FRIDGE DOOR ===== */
+.fB{background:linear-gradient(105deg,#eef1f3 0%,#dfe4e8 45%,#d3d9de 100%)}
+.fB::before{content:"";position:absolute;top:0;bottom:0;left:8%;width:1.5px;background:rgba(120,130,140,.35)}
+.fB .hd .t{font-family:var(--sans);font-weight:700;font-size:.9rem;letter-spacing:.3em;color:#5a646d;text-transform:uppercase}
+.fB .hd .p{font-family:"Caveat",cursive;font-size:1.15rem;color:#7a848d;margin-top:.15rem}
+.fB .note{background:#fff;color:#333a40;box-shadow:0 4px 10px rgba(60,80,100,.25);border-radius:1px}
+.fB .note::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  width:22px;height:22px;border-radius:50%;box-shadow:inset 0 -2px 4px rgba(0,0,0,.25), 0 2px 4px rgba(0,0,0,.25)}
+.fB .m1::before{background:#e2483d}.fB .m2::before{background:#2f7fd1}.fB .m3::before{background:#3aa15f}.fB .m4::before{background:#f0b428}
+.fB .live{outline:2px solid #2f7fd1}
+.fB .live .caret{background:#2f7fd1}.fB .who{color:#2f7fd1}
+.fB .padm .sh{background:#fff;box-shadow:0 4px 10px rgba(60,80,100,.3)}
+.fB .padm .lbl{color:#5a646d;font-family:var(--sans);font-weight:600}
+
+/* ===== C · THE NIGHT FIELD ===== */
+.fC{background:
+  radial-gradient(90% 70% at 50% 100%,#1b2440 0%,#0d1226 55%,#070a18 100%)}
+.fC .stars{position:absolute;inset:0;
+  background-image:radial-gradient(1px 1px at 12% 22%,rgba(255,255,255,.7),transparent),
+    radial-gradient(1px 1px at 78% 12%,rgba(255,255,255,.5),transparent),
+    radial-gradient(1.5px 1.5px at 55% 38%,rgba(255,255,255,.6),transparent),
+    radial-gradient(1px 1px at 30% 68%,rgba(255,255,255,.4),transparent),
+    radial-gradient(1px 1px at 88% 55%,rgba(255,255,255,.5),transparent)}
+.fC .hd .t{font-family:"Special Elite";font-size:.95rem;letter-spacing:.3em;color:#aebadd;text-transform:uppercase}
+.fC .hd .p{font-family:"Caveat",cursive;font-size:1.15rem;color:#7c88b0;margin-top:.15rem}
+.fC .note{background:rgba(255,248,225,.96);color:#4a4232;border-radius:6px;
+  box-shadow:0 0 22px rgba(255,220,140,.45), 0 0 60px rgba(255,220,140,.18)}
+.fC .note.dim{box-shadow:0 0 12px rgba(255,220,140,.25)}
+.fC .live{background:#fffdf4;box-shadow:0 0 30px rgba(255,230,150,.8), 0 0 90px rgba(255,230,150,.3)}
+.fC .live .caret{background:#c79a2e}.fC .who{color:#c79a2e}
+.fC .far{width:12px;height:12px;padding:0;border-radius:50%;background:rgba(255,240,190,.9);
+  box-shadow:0 0 10px rgba(255,220,140,.8)}
+.fC .padm .sh{background:rgba(255,248,225,.96);box-shadow:0 0 18px rgba(255,220,140,.5)}
+.fC .padm .lbl{color:#aebadd}
+
+/* ===== D · THE STUDIO TABLE ===== */
+.fD{background:#f6f5f2}
+.fD::before{content:"";position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(rgba(0,0,0,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.045) 1px,transparent 1px);
+  background-size:28px 28px}
+.fD .hd .t{font-family:var(--sans);font-weight:800;font-size:1rem;letter-spacing:.06em;color:#1d1e20}
+.fD .hd .p{font-family:var(--sans);font-size:.78rem;color:#8b8d91;margin-top:.25rem}
+.fD .note{border-radius:8px;color:#2c2d30;box-shadow:0 8px 20px rgba(20,20,30,.13);font-family:"Caveat",cursive}
+.fD .p1{background:#ffe066}.fD .p2{background:#ff9fb0}.fD .p3{background:#8ed6ff}.fD .p4{background:#b6f2a8}
+.fD .live{outline:2.5px solid #4c6fff;background:#fff}
+.fD .live .caret{background:#4c6fff}.fD .who{color:#4c6fff}
+.fD .padm .sh{background:#fff;border:1.5px solid #d9dade;box-shadow:0 6px 16px rgba(20,20,30,.12);border-radius:8px}
+.fD .padm .lbl{color:#8b8d91;font-family:var(--sans);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="cap">
+  <p class="n">stick with me &middot; worlds &middot; 1 of 4</p>
+  <h2>A &middot; Corkboard</h2>
+  <p>The laundromat community board, made infinite. Real cork, <b>red pushpins</b>, cream and pastel cards. Warmest analog register — support the way it looks taped up in real neighbourhoods.</p>
+</div>
+<section class="frame fA">
+  <div class="hd"><p class="t">stick with me</p><p class="p">three strangers here &middot; drag to wander</p></div>
+  <div class="note" style="left:22%;top:30%;transform:rotate(-2deg)">you've survived every bad day so far. all of them.<span class="sg">&mdash; a stranger</span></div>
+  <div class="note n2" style="left:48%;top:52%;transform:rotate(1.4deg)">it's okay to rest. resting is still moving.<span class="sg">&mdash; m.</span></div>
+  <div class="note live" style="left:64%;top:26%;transform:rotate(.8deg)"><span class="who">&#9998; writing</span>someone out here is glad<span class="caret"></span></div>
+  <div class="note n3" style="left:34%;top:66%;transform:rotate(2.2deg)">drink water. text them back. you're doing fine.<span class="sg">&mdash; anonymous</span></div>
+  <div class="padm"><div class="sh" style="transform:rotate(-3deg)"></div><div class="sh" style="transform:rotate(2deg)"></div><div class="sh"></div><p class="lbl">the pad</p></div>
+</section>
+
+<div class="cap">
+  <p class="n">stick with me &middot; worlds &middot; 2 of 4</p>
+  <h2>B &middot; Fridge Door</h2>
+  <p>Brushed steel and <b>coloured magnets</b> — the notes your family left you, from strangers. Domestic, bright, a little funny. The most disarming of the four; support without solemnity.</p>
+</div>
+<section class="frame fB">
+  <div class="hd"><p class="t">stick with me</p><p class="p">three strangers here &middot; drag to wander</p></div>
+  <div class="note m1" style="left:24%;top:32%;transform:rotate(-1.6deg)">eat something today. i mean it.<span class="sg">&mdash; a stranger</span></div>
+  <div class="note m2" style="left:50%;top:50%;transform:rotate(1deg)">you are not behind. there is no schedule.<span class="sg">&mdash; j</span></div>
+  <div class="note live m3" style="left:66%;top:28%;transform:rotate(-.6deg)"><span class="who">&#9998; writing</span>proud of you for<span class="caret"></span></div>
+  <div class="note m4" style="left:36%;top:68%;transform:rotate(1.8deg)">the plant isn't dead. neither are you. water both.<span class="sg">&mdash; anonymous</span></div>
+  <div class="padm"><div class="sh" style="transform:rotate(-2deg)"></div><div class="sh"></div><p class="lbl">the pad</p></div>
+</section>
+
+<div class="cap">
+  <p class="n">stick with me &middot; worlds &middot; 3 of 4</p>
+  <h2>C &middot; The Night Field</h2>
+  <p>Not a wall at all — a <b>dark field where every note is a small light</b>. Zoomed out, distant notes become fireflies; you drift toward a glow and it resolves into someone's words. The infinite canvas finally means something: a night full of lit windows. The poetic risk.</p>
+</div>
+<section class="frame fC">
+  <div class="stars"></div>
+  <div class="hd"><p class="t">stick with me</p><p class="p">three strangers out there &middot; drift toward the lights</p></div>
+  <div class="note" style="left:26%;top:34%;transform:rotate(-1.4deg)">whoever you are: the night ends. it always has.<span class="sg">&mdash; a stranger</span></div>
+  <div class="note dim" style="left:56%;top:56%;transform:rotate(1.2deg)">left the light on for you.<span class="sg">&mdash; m.</span></div>
+  <div class="note live" style="left:66%;top:24%;transform:rotate(.6deg)"><span class="who">&#9998; writing</span>you don't have to be okay ton<span class="caret"></span></div>
+  <div class="far" style="left:14%;top:64%"></div>
+  <div class="far" style="left:84%;top:70%"></div>
+  <div class="far" style="left:44%;top:14%"></div>
+  <div class="padm"><div class="sh" style="transform:rotate(-2deg)"></div><div class="sh"></div><p class="lbl">the pad</p></div>
+</section>
+
+<div class="cap">
+  <p class="n">stick with me &middot; worlds &middot; 4 of 4</p>
+  <h2>D &middot; The Studio Table</h2>
+  <p>Bright, modern, faint grid — the FigJam/Miro register with <b>saturated stickies and a blue accent</b>. Reads as a friendly tool rather than a moody place. Most legible, most shareable in screenshots, least mysterious.</p>
+</div>
+<section class="frame fD">
+  <div class="hd"><p class="t">stick with me</p><p class="p">3 strangers here &middot; drag to wander &middot; scroll to zoom</p></div>
+  <div class="note p1" style="left:24%;top:32%;transform:rotate(-1.2deg)">small steps count. tiny ones. crumbs.<span class="sg">&mdash; a stranger</span></div>
+  <div class="note p3" style="left:50%;top:52%;transform:rotate(.8deg)">someone remembers the kind thing you did.<span class="sg">&mdash; k</span></div>
+  <div class="note live" style="left:66%;top:28%;transform:rotate(-.4deg)"><span class="who">&#9998; writing</span>you're allowed to start over<span class="caret"></span></div>
+  <div class="note p4" style="left:35%;top:69%;transform:rotate(1.4deg)">ask for help. it's a skill, not a defeat.<span class="sg">&mdash; anonymous</span></div>
+  <div class="padm"><div class="sh" style="transform:rotate(-2deg)"></div><div class="sh"></div><p class="lbl">the pad</p></div>
+</section>
+
+<p class="foot">stick with me &middot; world study &middot; all notes placeholder &middot; current world (dark plaster + lamp) stays if nothing wins</p>
+
+</body>
+</html>
