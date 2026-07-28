@@ -17,7 +17,13 @@
 
 import { DurableObject } from 'cloudflare:workers';
 
-const BANNED = ['viagra', 'casino', 'crypto giveaway', 'http://', 'https://'];
+/* Nothing is filtered by what it says. A word list can't tell "casino ads"
+   from "my dad lost everything at the casino", and this wall exists for the
+   second sentence. Abuse is handled after the fact — the eraser, reports,
+   and the kill switch — not by guessing at words in advance.
+   If a specific attack ever needs blocking, add the narrowest possible
+   pattern here and expect it to catch innocent people too. */
+const BANNED = [];
 /* the studio palettes — customization is allowlisted, never free-form */
 const COLORS = ['#ffe066', '#ff9fb0', '#8ed6ff', '#b6f2a8', '#ffc78a', '#d9b8ff', '#ffffff'];
 const INKS = ['#2c2d30', '#2456d6', '#c23b57', '#1e7a46', '#6b3fb8'];
