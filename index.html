@@ -92,8 +92,13 @@
 
         <div class="tool">
           <p class="lbl">hand</p>
+          <div class="row" id="rowFont"></div>
+        </div>
+
+        <div class="tool">
+          <p class="lbl">size &middot; doodle</p>
           <div class="row">
-            <span id="rowFont" class="row"></span>
+            <span id="rowSize" class="row"></span>
             <span class="gap"></span>
             <button type="button" id="mDraw" class="fbtn" title="doodle on this note">&#9998;</button>
             <button type="button" id="bUndo" class="fbtn" title="undo stroke" hidden>&#8630;</button>
@@ -134,8 +139,10 @@
 
     var PAPERS = ['#ffe066', '#ff9fb0', '#8ed6ff', '#b6f2a8', '#ffc78a', '#d9b8ff', '#ffffff'];
     var INKS = ['#2c2d30', '#2456d6', '#c23b57', '#1e7a46', '#6b3fb8'];
-    var FONTS = ['hand', 'type', 'plain'];
+    var FONTS = ['hand', 'marker', 'neat', 'type', 'serif', 'plain'];
+    var SIZES = ['s', 'm', 'l'];
     function fontClass(f) { return 'f-' + (FONTS.indexOf(f) !== -1 ? f : 'hand'); }
+    function sizeClass(z) { return (z && z !== 'm' && SIZES.indexOf(z) !== -1) ? ' z-' + z : ''; }
 
     function el(tag, cls, text) {
       var d = document.createElement(tag);
@@ -386,7 +393,7 @@
       document.getElementById('bigSg').textContent = '— ' + (n.name || 'a stranger');
       document.getElementById('bigWhere').textContent = 'stuck at ( ' + Math.round(n.x || 0) + ', ' + Math.round(n.y || 0) + ' )';
       var bn = document.getElementById('bignote');
-      bn.className = 'bignote ' + fontClass(n.font);
+      bn.className = 'bignote ' + fontClass(n.font) + sizeClass(n.size);
       bn.style.setProperty('--paper', n.color || PAPERS[0]);
       document.getElementById('bigTxt').style.color = n.ink || INKS[0];
       var bs = document.getElementById('bigSvg');
@@ -425,6 +432,7 @@
         st.drafts[i].color = mine.color;
         st.drafts[i].ink = mine.ink;
         st.drafts[i].font = mine.font;
+        st.drafts[i].size = mine.size;
         st.drafts[i].strokes = mine.strokes;
         st.drafts[i].x = mine.x;
         st.drafts[i].y = mine.y;
@@ -434,7 +442,7 @@
 
     function benchApply() {
       if (!mine) return;
-      benchNote.className = 'benchnote ' + fontClass(mine.font) + (drawing ? ' drawing' : '');
+      benchNote.className = 'benchnote ' + fontClass(mine.font) + sizeClass(mine.size) + (drawing ? ' drawing' : '');
       benchNote.style.setProperty('--paper', mine.color);
       benchNote.style.color = mine.ink;
       benchSvg.style.color = mine.ink;
@@ -445,6 +453,11 @@
 
     function openBench() {
       bench.hidden = false;
+      document.getElementById('bStick').textContent = editing ? 'save it' : 'stick it';
+      document.getElementById('bToss').textContent = editing ? 'never mind' : 'toss it';
+      document.querySelector('.benchhint').textContent = editing
+        ? 'you can rewrite this for fifteen minutes after sticking it.'
+        : 'quiet sets it too — two minutes and it sticks itself.';
       benchApply();
       buildTray();
       syncMine();
@@ -453,6 +466,7 @@
       if (!drawing) setTimeout(function () { bTa.focus(); }, 60);
     }
     function closeBench() { bench.hidden = true; drawing = false; }
+    function cancelEdit() { if (editing) { editing = null; mine = null; closeBench(); render(); } }
 
     /* the pencil toggles drawing; leaving it returns you to writing */
     document.getElementById('mDraw').addEventListener('click', function () {
@@ -530,11 +544,21 @@
       });
       FONTS.forEach(function (f) {
         var b = el('button', 'fbtn ' + f + (mine && mine.font === f ? ' on' : ''), 'Aa');
-        b.type = 'button';
+        b.type = 'button'; b.title = f;
         b.addEventListener('click', function () {
           mine.font = f; benchApply(); markOn(rowF, b); scheduleStyle();
         });
         rowF.appendChild(b);
+      });
+      var rowZ = document.getElementById('rowSize');
+      rowZ.textContent = '';
+      SIZES.forEach(function (z) {
+        var b = el('button', 'fbtn z' + z + (mine && (mine.size || 'm') === z ? ' on' : ''), 'A');
+        b.type = 'button'; b.title = { s: 'small', m: 'medium', l: 'large' }[z];
+        b.addEventListener('click', function () {
+          mine.size = z; benchApply(); markOn(rowZ, b); scheduleStyle();
+        });
+        rowZ.appendChild(b);
       });
       function markOn(row, elx) {
         row.querySelectorAll('.on').forEach(function (x2) { x2.classList.remove('on'); });
@@ -547,26 +571,30 @@
     bTa.addEventListener('input', function () {
       if (!mine) return;
       mine.text = bTa.value;
+      if (editing) { benchApply(); return; }   /* nothing live until you save */
       syncMine();
       clearTimeout(tWrite);
-      tWrite = setTimeout(function () { send({ t: 'write', text: mine.text }); }, 250);
+      tWrite = setTimeout(function () { qsend({ t: 'write', text: mine.text }); }, 250);
     });
     bSign.addEventListener('change', function () {
       if (!mine) return;
       mine.sign = bSign.value;
-      send({ t: 'sign', name: mine.sign });
+      if (editing) return;
+      qsend({ t: 'sign', name: mine.sign });
     });
     function scheduleStyle() {
+      if (editing) return;
       syncMine();
       clearTimeout(tStyle);
       tStyle = setTimeout(function () {
-        send({ t: 'style', color: mine.color, ink: mine.ink, font: mine.font });
+        qsend({ t: 'style', color: mine.color, ink: mine.ink, font: mine.font, size: mine.size });
       }, 250);
     }
     function scheduleDoodle() {
+      if (editing) { benchApply(); return; }
       syncMine();
       clearTimeout(tDoodle);
-      tDoodle = setTimeout(function () { send({ t: 'doodle', strokes: mine.strokes }); }, 400);
+      tDoodle = setTimeout(function () { qsend({ t: 'doodle', strokes: mine.strokes }); }, 400);
     }
 
     /* stick / toss — sequenced so the engine throttle drops nothing.
@@ -586,21 +614,31 @@
     }
     document.getElementById('bStick').addEventListener('click', function () {
       if (!mine) return;
+      if (editing) { saveEdit(); return; }
       var b = this; b.disabled = true;
-      clearTimeout(tWrite); clearTimeout(tDoodle);
-      send({ t: 'write', text: bTa.value });
-      setTimeout(function () { send({ t: 'doodle', strokes: mine.strokes }); }, 170);
-      setTimeout(function () { send({ t: 'release' }); b.disabled = false; armReleaseWatch(); }, 360);
+      clearTimeout(tWrite); clearTimeout(tStyle); clearTimeout(tDoodle);
+      qsend({ t: 'write', text: bTa.value });
+      qsend({ t: 'sign', name: bSign.value });
+      qsend({ t: 'style', color: mine.color, ink: mine.ink, font: mine.font, size: mine.size });
+      qsend({ t: 'doodle', strokes: mine.strokes });
+      qsend({ t: 'release' });
+      setTimeout(function () { b.disabled = false; armReleaseWatch(); }, 900);
     });
     document.getElementById('bToss').addEventListener('click', function () {
       if (!mine) return;
-      clearTimeout(tWrite); clearTimeout(tDoodle);
-      send({ t: 'write', text: '' });
-      setTimeout(function () { send({ t: 'doodle', strokes: [] }); }, 170);
-      setTimeout(function () { send({ t: 'release' }); }, 360);
+      if (editing) {                 /* cancel the rewrite, keep the note as it was */
+        editing = null; mine = null; closeBench(); render();
+        return;
+      }
+      clearTimeout(tWrite); clearTimeout(tStyle); clearTimeout(tDoodle);
+      qsend({ t: 'write', text: '' });
+      qsend({ t: 'doodle', strokes: [] });
+      qsend({ t: 'release' });
     });
     bench.addEventListener('click', function (e) {
-      if (e.target === bench) closeBench(); /* click outside: bench closes, draft stays on the wall */
+      if (e.target !== bench) return;
+      if (editing) cancelEdit();   /* clicking away from a rewrite abandons it */
+      else closeBench();           /* a new note keeps drafting on the wall */
     });
 
     /* ---- start a draft ---- */
@@ -737,6 +775,7 @@
     }
     function peelable(id) { return peels[id] && peels[id].e > Date.now(); }
 
+    var editing = null;   /* {id, token} while rewriting an already-stuck note */
     var draggingDraft = false;
     function render() {
       /* never rebuild the wall out from under a note being moved */
@@ -745,7 +784,7 @@
       presEl.textContent = presenceLine();
 
       st.notes.forEach(function (n) {
-        var d = el('div', 'note ' + fontClass(n.font) + (n.text.length > 90 ? ' longtext' : ''));
+        var d = el('div', 'note ' + fontClass(n.font) + sizeClass(n.size) + (n.text.length > 90 ? ' longtext' : ''));
         d.style.setProperty('--paper', n.color || PAPERS[0]);
         d.style.color = n.ink || INKS[0];
         place(d, n.x, n.y, n.id);
@@ -754,6 +793,13 @@
         d.appendChild(el('span', 'notetext', n.text));
         d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
         if (peelable(n.id) && !isArchive) {
+          var eb = el('button', 'peelbtn editbtn', 'edit');
+          eb.type = 'button';
+          eb.title = 'rewrite it (yours, briefly)';
+          eb.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+          eb.addEventListener('click', function (e) { e.stopPropagation(); openEdit(n); });
+          d.appendChild(eb);
+
           var pb = el('button', 'peelbtn', 'peel');
           pb.type = 'button';
           pb.title = 'take your note back (yours, briefly)';
@@ -769,7 +815,7 @@
 
       (st.drafts || []).forEach(function (dr) {
         var isMe = mine && dr.gid === st.you;
-        var d = el('div', 'note live ' + fontClass(isMe ? mine.font : dr.font) + (isMe ? ' yours' : ''));
+        var d = el('div', 'note live ' + fontClass(isMe ? mine.font : dr.font) + sizeClass(isMe ? mine.size : dr.size) + (isMe ? ' yours' : ''));
         d.style.setProperty('--paper', (isMe ? mine.color : dr.color) || '#ffffff');
         d.style.color = (isMe ? mine.ink : dr.ink) || INKS[0];
         place(d, dr.x, dr.y, dr.gid);
@@ -836,6 +882,43 @@
       });
     }
 
+    /* rewrite a note you already stuck — same fifteen minutes as the peel */
+    function openEdit(n) {
+      if (mine) { say('finish your note first.'); openBench(); return; }
+      editing = { id: n.id, token: peels[n.id].t };
+      mine = {
+        color: n.color || PAPERS[0], ink: n.ink || INKS[0],
+        font: n.font || 'hand', size: n.size || 'm',
+        text: n.text || '', sign: (n.name && n.name !== 'a stranger') ? n.name : '',
+        strokes: (n.strokes || []).slice(), x: n.x, y: n.y
+      };
+      glideTo(n.x || 0, n.y || 0, 0.8);
+      openBench();
+    }
+
+    function saveEdit() {
+      var patch = {
+        text: bTa.value, name: bSign.value,
+        color: mine.color, ink: mine.ink, font: mine.font, size: mine.size,
+        strokes: mine.strokes, x: mine.x, y: mine.y
+      };
+      var id = editing.id, token = editing.token;
+      fetch(WORKER_URL + '/wall/' + wanted + '/edit', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: id, token: token, patch: patch })
+      }).then(function (r) { return r.json(); }).then(function (out) {
+        if (out.ok) {
+          var i = st.notes.findIndex(function (n) { return n.id === id; });
+          if (i !== -1) st.notes[i] = out.note;
+          editing = null; mine = null; closeBench(); render();
+          say('rewritten.');
+        } else {
+          say(out.error || 'could not save it.');
+        }
+      }).catch(function () { say('could not reach the wall.'); });
+    }
+
     function doPeel(id, noteEl) {
       fetch(WORKER_URL + '/wall/' + wanted + '/peel', {
         method: 'POST',
@@ -859,6 +942,16 @@
 
     /* ================= live ================= */
     function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
+
+    /* The engine drops anything arriving within 140ms of the last message,
+       so bursts must be paced. Queue them rather than guessing at delays. */
+    var sendQ = [], sendTimer = null;
+    function qsend(m) { sendQ.push(m); pump(); }
+    function pump() {
+      if (sendTimer || !sendQ.length) return;
+      send(sendQ.shift());
+      sendTimer = setTimeout(function () { sendTimer = null; pump(); }, 165);
+    }
 
     var hb = null, lastPong = 0;
     function connect() {
@@ -894,7 +987,7 @@
         } else if (m.t === 'draft') {
           if (m.gid === st.you) {
             if (pendingStart && !mine) {
-              mine = { color: m.color, ink: m.ink || INKS[0], font: m.font || 'hand', text: '', sign: '', strokes: [], x: m.x, y: m.y };
+              mine = { color: m.color, ink: m.ink || INKS[0], font: m.font || 'hand', size: m.size || 'm', text: '', sign: '', strokes: [], x: m.x, y: m.y };
               pendingStart = false;
               /* your draft belongs on the wall too — that's what you nudge */
               if (!(st.drafts || []).some(function (d) { return d.gid === m.gid; })) {
@@ -905,7 +998,7 @@
             }
           } else {
             var i = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
-            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color, ink: m.ink, font: m.font, strokes: m.strokes || [], x: m.x, y: m.y });
+            if (i === -1) st.drafts.push({ gid: m.gid, text: m.text, color: m.color, ink: m.ink, font: m.font, size: m.size, strokes: m.strokes || [], x: m.x, y: m.y });
             else { st.drafts[i].text = m.text; }
           }
           render();
@@ -918,7 +1011,7 @@
         } else if (m.t === 'style') {
           var j = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
           if (j !== -1) {
-            st.drafts[j].color = m.color; st.drafts[j].ink = m.ink; st.drafts[j].font = m.font;
+            st.drafts[j].color = m.color; st.drafts[j].ink = m.ink; st.drafts[j].font = m.font; st.drafts[j].size = m.size;
             render();
           }
         } else if (m.t === 'gone') {
