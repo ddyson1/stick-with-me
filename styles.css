@@ -254,7 +254,21 @@ body {
   font-size: 0.72em; opacity: 0.5;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.note.longtext { font-size: 0.82em; }
+.note { cursor: pointer; }
+/* words that still won't fit fade out rather than being chopped mid-letter */
+.note.clipped .notetext {
+  -webkit-mask-image: linear-gradient(180deg, #000 76%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 76%, transparent 100%);
+}
+.note.clipped::before {
+  content: "read it";
+  position: absolute; left: 15px; bottom: 12px;
+  font-family: var(--sans); font-size: 8.5px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(44, 45, 48, 0.4); z-index: 2;
+}
+.note.welcome { cursor: default; }
+.note.welcome::before { content: none; }
 
 /* doodles live on an svg layer under the words */
 .note svg, .bignote svg {

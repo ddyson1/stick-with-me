@@ -387,7 +387,9 @@
     var lastTaken = null;
     function takeOne() {
       if (!st || !st.notes.length) { say('the wall is bare — be the first to leave one.'); return; }
-      var n = st.notes[Math.floor(Math.random() * st.notes.length)];
+      showNote(st.notes[Math.floor(Math.random() * st.notes.length)]);
+    }
+    function showNote(n) {
       lastTaken = n;
       document.getElementById('bigTxt').textContent = n.text;
       document.getElementById('bigSg').textContent = '— ' + (n.name || 'a stranger');
@@ -766,6 +768,20 @@
       return d;
     }
 
+    /* A sticky is small and people write a lot. Step the words down until
+       they fit the paper; past a floor they'd be unreadable, so the note
+       shows what it can and opening it gives you the rest. */
+    function fitNote(d) {
+      var tx = d.querySelector('.notetext');
+      if (!tx) return;
+      var em = 1;
+      for (var i = 0; i < 8 && tx.scrollHeight > tx.clientHeight + 1; i++) {
+        em -= 0.09;
+        if (em < 0.55) { d.classList.add('clipped'); break; }
+        tx.style.fontSize = em.toFixed(2) + 'em';
+      }
+    }
+
     /* ================= render ================= */
     function place(d, x, y, seed) {
       d.style.left = (x || 0) + 'px';
@@ -777,9 +793,11 @@
 
     var editing = null;   /* {id, token} while rewriting an already-stuck note */
     var draggingDraft = false;
+    var fitQueue = [];
     function render() {
       /* never rebuild the wall out from under a note being moved */
       if (draggingDraft) { presEl.textContent = presenceLine(); return; }
+      fitQueue = [];
       spaceEl.textContent = '';
       presEl.textContent = presenceLine();
 
@@ -790,8 +808,18 @@
         place(d, n.x, n.y, n.id);
         d.title = '( ' + Math.round(n.x || 0) + ', ' + Math.round(n.y || 0) + ' )';
         if (n.strokes && n.strokes.length) d.appendChild(noteSvg(n.strokes, n.ink));
+        fitQueue.push(d);
         d.appendChild(el('span', 'notetext', n.text));
         d.appendChild(el('span', 'sg', '— ' + (n.name || 'a stranger')));
+        d.title = 'read it  ·  ( ' + Math.round(n.x || 0) + ', ' + Math.round(n.y || 0) + ' )';
+        (function (note) {
+          var moved = false, sx = 0, sy = 0;
+          d.addEventListener('pointerdown', function (e) { moved = false; sx = e.clientX; sy = e.clientY; });
+          d.addEventListener('pointerup', function (e) {
+            if (Math.hypot(e.clientX - sx, e.clientY - sy) > 5) return;  /* that was a pan */
+            showNote(note);
+          });
+        })(n);
         if (peelable(n.id) && !isArchive) {
           var eb = el('button', 'peelbtn editbtn', 'edit');
           eb.type = 'button';
@@ -838,6 +866,8 @@
       });
 
       if (!isArchive) spaceEl.appendChild(welcomeNote());
+      fitQueue.forEach(fitNote);
+      fitQueue = [];
     }
 
     /* your draft can be nudged around the wall until it sets */
