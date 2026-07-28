@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>stick with me — the welcome</title>
+<style>
+@font-face{font-family:"Caveat";src:url(data:font/woff2;base64,__CAVEAT__) format("woff2");font-display:swap}
+@font-face{font-family:"Special Elite";src:url(data:font/woff2;base64,__ELITE__) format("woff2");font-display:swap}
+:root{
+  --hand:"Caveat",cursive; --type:"Special Elite",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  --blue:#4c6fff; --table:#f6f5f2; --grid:rgba(0,0,0,.045);
+  --ink:#1d1e20; --dim:#6d6f74; --faint:#9b9da2; --card:#fff; --line:#dfe0e4;
+  --sh:rgba(20,20,30,.13); --shb:rgba(20,20,30,.22);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#0e0f12;color:#e9eaec;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.cap{max-width:48rem;margin:0 auto;padding:clamp(2rem,5vw,3rem) 1.4rem .9rem}
+.cap .n{font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:#6b727c}
+.cap h2{margin:.35rem 0 .45rem;font-size:1.3rem;font-weight:700}
+.cap p{margin:0;color:#9aa0aa;font-size:.9rem;line-height:1.6}
+.cap b{color:#e9eaec}
+.foot{padding:2.5rem 1.4rem 4rem;text-align:center;color:#6b727c;font-size:.78rem}
+
+.screen{max-width:62rem;margin:0 auto;height:26rem;position:relative;overflow:hidden;
+  border:1px solid #2a2c31;border-radius:14px;background:var(--table);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+
+/* wall furniture, faint, for context */
+.mini{position:absolute;width:82px;height:82px;border-radius:2px 2px 6px 3px;font-family:var(--hand);font-size:11px;
+  color:#2c2d30;padding:9px 10px;line-height:1.25;
+  background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 20%),var(--p,#ffe066);
+  box-shadow:0 1px 2px rgba(20,20,30,.1),0 8px 14px -6px var(--sh)}
+.fanpad{position:absolute;left:22px;bottom:22px;width:120px;height:88px}
+.fanpad i{position:absolute;left:30px;top:4px;width:62px;height:62px;border-radius:2px;display:block;
+  border:1px solid rgba(0,0,0,.06);box-shadow:0 3px 7px var(--sh);transform-origin:50% 138%}
+.ops{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;gap:5px}
+.ops b{width:26px;height:26px;border-radius:8px;background:var(--card);border:1px solid var(--line);
+  display:grid;place-items:center;font-size:12px;color:var(--dim);font-weight:600}
+.coordchip{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);font-size:.6rem;font-weight:600;
+  letter-spacing:.14em;color:var(--faint);background:var(--card);border:1px solid var(--line);
+  border-radius:999px;padding:.2rem .7rem}
+.lampdot{position:absolute;right:16px;top:16px;width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(140deg,#fff 45%,#d8d9de 55%);border:1.5px solid var(--line)}
+
+/* the note object */
+.wn{position:absolute;font-family:var(--hand);color:#2c2d30;
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0) 16%),var(--p,#fff);
+  border-radius:3px 3px 10px 4px;
+  box-shadow:0 2px 4px rgba(20,20,30,.1),0 20px 36px -10px var(--shb);z-index:6;overflow:hidden}
+.wn::after{content:"";position:absolute;right:0;bottom:0;width:34px;height:34px;
+  background:linear-gradient(315deg,rgba(0,0,0,.14),rgba(0,0,0,.04) 30%,rgba(255,255,255,.3) 46%,transparent 62%);
+  border-radius:0 0 10px 0}
+.wn .ttl{font-weight:700;font-size:19px;display:block;margin-bottom:7px}
+.wn .go{display:inline-block;margin-top:11px;font-family:var(--sans);font-size:.58rem;font-weight:800;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.arrow{position:absolute;stroke:#2c2d30;fill:none;stroke-width:2;stroke-linecap:round;opacity:.55;z-index:5}
+</style>
+</head>
+<body>
+
+<div class="cap">
+  <p class="n">the welcome &middot; five ways</p>
+  <h2>How the wall greets you</h2>
+  <p>All of these keep <b>the wall on screen from the first second</b> and put the introduction <em>into</em> the world rather than above it. They differ in how much they say, and in what kind of object says it.</p>
+</div>
+
+<!-- ── W1 ───────────────────────────────────────────────── -->
+<div class="cap"><p class="n">w1 &middot; the origin note</p></div>
+<section class="screen">
+  <div class="lampdot"></div>
+  <span class="mini" style="--p:#ffe066;left:9%;top:16%;transform:rotate(-3deg)">you've survived every bad day so far</span>
+  <span class="mini" style="--p:#8ed6ff;left:16%;top:66%;transform:rotate(2deg)">it's okay to rest</span>
+  <span class="mini" style="--p:#ff9fb0;left:76%;top:20%;transform:rotate(1deg)">drink water. text them back.</span>
+  <span class="mini" style="--p:#b6f2a8;left:80%;top:66%;transform:rotate(-2deg)">you are not behind</span>
+  <div class="wn" style="--p:#fff;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-1.5deg);width:238px;font-size:15px;line-height:1.4;padding:19px 20px">
+    <span class="ttl">stick with me</span>
+    a wall of support from strangers, for strangers.<br><br>take what you need.<br>leave what you can.
+    <span class="go">take one &nbsp;·&nbsp; leave one</span>
+  </div>
+  <div class="fanpad">
+    <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+    <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+    <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+    <i style="background:#fff;transform:rotate(25deg);z-index:1"></i>
+  </div>
+  <div class="ops"><b>+</b><b>−</b><b>⌂</b></div>
+  <span class="coordchip">0, 0</span>
+</section>
+<div class="cap"><p>One white note at the origin, in the same hand as everything else. <b>Quietest.</b> Risk: a newcomer may read it as just another stranger's note rather than the house speaking.</p></div>
+
+<!-- ── W2 ───────────────────────────────────────────────── -->
+<div class="cap"><p class="n">w2 &middot; the note that points</p></div>
+<section class="screen">
+  <div class="lampdot"></div>
+  <span class="mini" style="--p:#ffe066;left:10%;top:14%;transform:rotate(-3deg)">you've survived every bad day so far</span>
+  <span class="mini" style="--p:#ff9fb0;left:78%;top:22%;transform:rotate(1deg)">drink water. text them back.</span>
+  <span class="mini" style="--p:#b6f2a8;left:80%;top:66%;transform:rotate(-2deg)">you are not behind</span>
+  <div class="wn" style="--p:#fff;left:47%;top:44%;transform:translate(-50%,-50%) rotate(-1.5deg);width:244px;font-size:15px;line-height:1.4;padding:19px 20px">
+    <span class="ttl">stick with me</span>
+    a wall of support from strangers, for strangers.<br><br>
+    <b style="font-weight:400">take what you need</b> &mdash; tap any note.<br>
+    <b style="font-weight:400">leave what you can</b> &mdash; pull a sheet
+    <span style="font-size:19px">&#8600;</span>
+  </div>
+  <svg class="arrow" style="left:11%;top:56%;width:230px;height:150px" viewBox="0 0 230 150">
+    <path d="M210 12 C 150 40, 90 60, 46 108" stroke-dasharray="5 7"/>
+    <path d="M38 100 L44 112 L56 106"/>
+  </svg>
+  <div class="fanpad">
+    <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+    <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+    <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+    <i style="background:#fff;transform:rotate(25deg);z-index:1"></i>
+  </div>
+  <div class="ops"><b>+</b><b>−</b><b>⌂</b></div>
+  <span class="coordchip">0, 0</span>
+</section>
+<div class="cap"><p>The same note, but it <b>teaches by pointing</b> — a hand-drawn dashed arrow curls from the note down to the pad. Uses the doodle language the site already has. Warmest and the clearest about what to do.</p></div>
+
+<!-- ── W3 ───────────────────────────────────────────────── -->
+<div class="cap"><p class="n">w3 &middot; the index card</p></div>
+<section class="screen">
+  <div class="lampdot"></div>
+  <span class="mini" style="--p:#ffe066;left:11%;top:18%;transform:rotate(-3deg)">you've survived every bad day so far</span>
+  <span class="mini" style="--p:#8ed6ff;left:18%;top:68%;transform:rotate(2deg)">it's okay to rest</span>
+  <span class="mini" style="--p:#ff9fb0;left:78%;top:20%;transform:rotate(1deg)">drink water. text them back.</span>
+  <span class="mini" style="--p:#b6f2a8;left:80%;top:66%;transform:rotate(-2deg)">you are not behind</span>
+  <div class="wn" style="--p:#fffdf6;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-.8deg);width:280px;font-size:14px;line-height:1.5;padding:22px 24px 20px;border-radius:2px;
+    background:repeating-linear-gradient(#fffdf6 0 21px,#e9e6da 21px 22px);border:1px solid #e0dccd">
+    <span style="font-family:var(--type);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#8a8474;display:block;margin-bottom:9px">the house</span>
+    <span class="ttl" style="font-size:18px">stick with me</span>
+    a wall of support from strangers, for strangers. take what you need; leave what you can.
+    <span class="go">take one &nbsp;·&nbsp; leave one &nbsp;·&nbsp; the rules</span>
+  </div>
+  <div style="position:absolute;left:calc(50% - 34px);top:calc(50% - 92px);width:70px;height:22px;background:rgba(255,222,130,.62);transform:rotate(-3deg);z-index:7;border-radius:2px"></div>
+  <div class="fanpad">
+    <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+    <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+    <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+    <i style="background:#fff;transform:rotate(25deg);z-index:1"></i>
+  </div>
+  <div class="ops"><b>+</b><b>−</b><b>⌂</b></div>
+  <span class="coordchip">0, 0</span>
+</section>
+<div class="cap"><p>A <b>ruled index card taped to the wall</b> — a different object from a sticky, so it reads unmistakably as the house speaking, not a stranger. Room for a rules link. Slightly more formal.</p></div>
+
+<!-- ── W4 ───────────────────────────────────────────────── -->
+<div class="cap"><p class="n">w4 &middot; three notes, in someone's hand</p></div>
+<section class="screen">
+  <div class="lampdot"></div>
+  <span class="mini" style="--p:#ffe066;left:10%;top:14%;transform:rotate(-3deg)">you've survived every bad day so far</span>
+  <span class="mini" style="--p:#b6f2a8;left:82%;top:64%;transform:rotate(-2deg)">you are not behind</span>
+  <div class="wn" style="--p:#fff;left:31%;top:42%;transform:translate(-50%,-50%) rotate(-3deg);width:160px;font-size:15px;line-height:1.35;padding:16px 17px">
+    <span class="ttl" style="font-size:17px">stick with me</span>
+    a wall of support from strangers, for strangers.
+  </div>
+  <div class="wn" style="--p:#ffe066;left:52%;top:56%;transform:translate(-50%,-50%) rotate(2deg);width:150px;font-size:15px;line-height:1.35;padding:16px 17px">
+    take what you need &mdash;<br>tap any note here.
+  </div>
+  <div class="wn" style="--p:#8ed6ff;left:70%;top:38%;transform:translate(-50%,-50%) rotate(-1.5deg);width:150px;font-size:15px;line-height:1.35;padding:16px 17px">
+    leave what you can &mdash;<br>pull a sheet from the pad.
+  </div>
+  <div class="fanpad">
+    <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+    <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+    <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+    <i style="background:#fff;transform:rotate(25deg);z-index:1"></i>
+  </div>
+  <div class="ops"><b>+</b><b>−</b><b>⌂</b></div>
+  <span class="coordchip">0, 0</span>
+</section>
+<div class="cap"><p>The welcome is <b>three notes arranged like someone laid them out for you</b> — name, then each half of the ethic, each on its own paper. Teaches the whole idea without a paragraph, and shows off colour immediately. Takes more of the wall.</p></div>
+
+<!-- ── W5 ───────────────────────────────────────────────── -->
+<div class="cap"><p class="n">w5 &middot; written on the wall itself</p></div>
+<section class="screen">
+  <div class="lampdot"></div>
+  <div style="position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;z-index:4">
+    <p style="font-family:var(--hand);font-size:30px;color:rgba(60,58,54,.34);margin:0">stick with me</p>
+    <p style="font-family:var(--hand);font-size:17px;color:rgba(60,58,54,.28);margin:.3rem 0 0">a wall of support from strangers, for strangers.<br>take what you need &middot; leave what you can</p>
+  </div>
+  <span class="mini" style="--p:#ffe066;left:12%;top:18%;transform:rotate(-3deg)">you've survived every bad day so far</span>
+  <span class="mini" style="--p:#8ed6ff;left:20%;top:68%;transform:rotate(2deg)">it's okay to rest</span>
+  <span class="mini" style="--p:#ff9fb0;left:76%;top:22%;transform:rotate(1deg)">drink water. text them back.</span>
+  <span class="mini" style="--p:#b6f2a8;left:82%;top:64%;transform:rotate(-2deg)">you are not behind</span>
+  <div class="fanpad">
+    <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+    <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+    <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+    <i style="background:#fff;transform:rotate(25deg);z-index:1"></i>
+  </div>
+  <div class="ops"><b>+</b><b>−</b><b>⌂</b></div>
+  <span class="coordchip">0, 0</span>
+</section>
+<div class="cap"><p>No object at all — the words are <b>painted faintly on the plaster</b>, behind every note. Nothing to dismiss, nothing to peel, never in the way; notes stuck over it partially cover it, which is rather lovely as the wall fills. <b>Boldest and most restrained.</b> Weakest at telling you what to do.</p></div>
+
+<p class="foot">stick with me &middot; welcome study &middot; a note pinned at the origin can also be peeled by its owner &mdash; these are all one hard-coded object, not a real note</p>
+
+</body>
+</html>
