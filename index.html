@@ -61,8 +61,7 @@
   <div class="pad" id="pad" title="drag a blank onto the wall">
     <div class="sheet s3"></div>
     <div class="sheet s2"></div>
-    <div class="sheet s1" id="padTop"><span>drag me</span></div>
-    <p class="padlabel">the pad</p>
+    <div class="sheet s1" id="padTop"><span>leave a note</span></div>
   </div>
 
   <div class="backbar" id="backbar" hidden><a href="./">back to the open wall</a></div>
@@ -70,6 +69,11 @@
   <footer class="tail">
     <p>an endless wall &middot; every note stays where its stranger stuck it.</p>
     <p class="fine">no accounts &middot; notes sign &ldquo;a stranger&rdquo; unless you add a name &middot; be gentle</p>
+    <p class="fine links">
+      <a href="terms.html">the rules</a> &middot;
+      <a href="privacy.html">privacy</a> &middot;
+      <a href="terms.html#help">this is not a crisis service</a>
+    </p>
   </footer>
 
   <!-- take-one overlay -->
@@ -415,6 +419,22 @@
     var bSign = document.getElementById('bSign');
     var drawing = false;
 
+    /* keep the wall copy of my draft in step with the bench */
+    function syncMine() {
+      if (!mine || !st) return;
+      var i = (st.drafts || []).findIndex(function (d) { return d.gid === st.you; });
+      if (i !== -1) {
+        st.drafts[i].text = mine.text;
+        st.drafts[i].color = mine.color;
+        st.drafts[i].ink = mine.ink;
+        st.drafts[i].font = mine.font;
+        st.drafts[i].strokes = mine.strokes;
+        st.drafts[i].x = mine.x;
+        st.drafts[i].y = mine.y;
+      }
+      render();
+    }
+
     function benchApply() {
       if (!mine) return;
       benchNote.className = 'benchnote ' + fontClass(mine.font) + (drawing ? ' drawing' : '');
@@ -430,6 +450,7 @@
       bench.hidden = false;
       benchApply();
       buildTray();
+      syncMine();
       bTa.value = mine.text || '';
       bSign.value = mine.sign || '';
       if (!drawing) setTimeout(function () { bTa.focus(); }, 60);
@@ -532,6 +553,7 @@
     bTa.addEventListener('input', function () {
       if (!mine) return;
       mine.text = bTa.value;
+      syncMine();
       clearTimeout(tWrite);
       tWrite = setTimeout(function () { send({ t: 'write', text: mine.text }); }, 250);
     });
@@ -541,12 +563,14 @@
       send({ t: 'sign', name: mine.sign });
     });
     function scheduleStyle() {
+      syncMine();
       clearTimeout(tStyle);
       tStyle = setTimeout(function () {
         send({ t: 'style', color: mine.color, ink: mine.ink, font: mine.font });
       }, 250);
     }
     function scheduleDoodle() {
+      syncMine();
       clearTimeout(tDoodle);
       tDoodle = setTimeout(function () { send({ t: 'doodle', strokes: mine.strokes }); }, 400);
     }
@@ -613,9 +637,11 @@
       document.addEventListener('pointerup', padUp, { once: true });
       document.addEventListener('pointercancel', function () {
         document.removeEventListener('pointermove', moveGhost);
+        clearDropspot();
         if (ghost) { ghost.remove(); ghost = null; }
       }, { once: true });
     }
+    var dropspot = null;
     function moveGhost(e) {
       if (!ghost) return;
       ghost.style.left = e.clientX + 'px';
@@ -623,9 +649,20 @@
       var r = wallEl.getBoundingClientRect();
       var over = e.clientY > r.top && e.clientY < r.bottom && e.clientX > r.left && e.clientX < r.right;
       ghost.classList.toggle('over', over);
+      /* show the wall exactly where this will land */
+      if (over) {
+        if (!dropspot) { dropspot = el('div', 'dropspot'); spaceEl.appendChild(dropspot); }
+        var w = screenToWorld(e.clientX, e.clientY);
+        dropspot.style.left = w.x + 'px';
+        dropspot.style.top = w.y + 'px';
+      } else if (dropspot) {
+        dropspot.remove(); dropspot = null;
+      }
     }
+    function clearDropspot() { if (dropspot) { dropspot.remove(); dropspot = null; } }
     function padUp(e) {
       document.removeEventListener('pointermove', moveGhost);
+      clearDropspot();
       if (!ghost) return;
       ghost.remove(); ghost = null;
       var r = wallEl.getBoundingClientRect();
@@ -640,11 +677,15 @@
     function place(d, x, y, seed) {
       d.style.left = (x || 0) + 'px';
       d.style.top = (y || 0) + 'px';
+      d.style.setProperty('--tilt', tilt(seed) + 'deg');
       d.style.transform = 'translate(-50%,-50%) rotate(' + tilt(seed) + 'deg)';
     }
     function peelable(id) { return peels[id] && peels[id].e > Date.now(); }
 
+    var draggingDraft = false;
     function render() {
+      /* never rebuild the wall out from under a note being moved */
+      if (draggingDraft) { presEl.textContent = presenceLine(); return; }
       spaceEl.textContent = '';
       presEl.textContent = presenceLine();
 
@@ -664,7 +705,7 @@
           pb.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
           pb.addEventListener('click', function (e) {
             e.stopPropagation();
-            doPeel(n.id);
+            doPeel(n.id, d);
           });
           d.appendChild(pb);
         }
@@ -684,8 +725,8 @@
         d.appendChild(span);
         span.appendChild(el('span', 'caret'));
         if (isMe) {
-          d.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-          d.addEventListener('click', openBench);
+          d.appendChild(el('span', 'grip', 'drag to move · tap to edit'));
+          makeDraftDraggable(d);
         }
         spaceEl.appendChild(d);
       });
@@ -697,7 +738,49 @@
       }
     }
 
-    function doPeel(id) {
+    /* your draft can be nudged around the wall until it sets */
+    function makeDraftDraggable(d) {
+      d.addEventListener('pointerdown', function (e) {
+        e.stopPropagation();          /* the wall must not pan under it */
+        if (!mine) return;
+        var moved = false, tPlace = null;
+        var w0 = screenToWorld(e.clientX, e.clientY);
+        var offx = mine.x - w0.x, offy = mine.y - w0.y;
+        draggingDraft = true;
+        d.classList.add('shifting');
+
+        function onMove(ev) {
+          if (!mine) return;
+          var w = screenToWorld(ev.clientX, ev.clientY);
+          var nx = w.x + offx, ny = w.y + offy;
+          if (Math.hypot(nx - mine.x, ny - mine.y) > 1) moved = true;
+          mine.x = nx; mine.y = ny;
+          d.style.left = nx + 'px';
+          d.style.top = ny + 'px';
+          clearTimeout(tPlace);
+          tPlace = setTimeout(function () { send({ t: 'place', x: mine.x, y: mine.y }); }, 200);
+        }
+        function onUp() {
+          document.removeEventListener('pointermove', onMove);
+          document.removeEventListener('pointerup', onUp);
+          document.removeEventListener('pointercancel', onUp);
+          draggingDraft = false;
+          d.classList.remove('shifting');
+          if (moved) {
+            clearTimeout(tPlace);
+            send({ t: 'place', x: mine.x, y: mine.y });
+            syncMine();
+          } else {
+            openBench();              /* a tap, not a drag */
+          }
+        }
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+        document.addEventListener('pointercancel', onUp);
+      });
+    }
+
+    function doPeel(id, noteEl) {
       fetch(WORKER_URL + '/wall/' + wanted + '/peel', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -706,8 +789,12 @@
         if (out.ok) {
           delete peels[id]; savePeels();
           st.notes = st.notes.filter(function (n) { return n.id !== id; });
-          render();
           say('peeled — the hour is yours again.');
+          /* let it curl off the wall before the list catches up */
+          if (noteEl) {
+            noteEl.classList.add('peeling');
+            setTimeout(render, 620);
+          } else render();
         } else {
           say(out.error || 'could not peel it.');
         }
@@ -753,6 +840,10 @@
             if (pendingStart && !mine) {
               mine = { color: m.color, ink: m.ink || INKS[0], font: m.font || 'hand', text: '', sign: '', strokes: [], x: m.x, y: m.y };
               pendingStart = false;
+              /* your draft belongs on the wall too — that's what you nudge */
+              if (!(st.drafts || []).some(function (d) { return d.gid === m.gid; })) {
+                st.drafts.push({ gid: m.gid, text: '', color: m.color, ink: m.ink, font: m.font, strokes: [], x: m.x, y: m.y });
+              }
               glideTo(m.x, m.y, 0.8);
               openBench();
             }
@@ -765,6 +856,9 @@
         } else if (m.t === 'doodle') {
           var k = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
           if (k !== -1) { st.drafts[k].strokes = m.strokes || []; render(); }
+        } else if (m.t === 'placed') {
+          var q = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
+          if (q !== -1) { st.drafts[q].x = m.x; st.drafts[q].y = m.y; render(); }
         } else if (m.t === 'style') {
           var j = (st.drafts || []).findIndex(function (d) { return d.gid === m.gid; });
           if (j !== -1) {

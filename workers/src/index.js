@@ -180,6 +180,7 @@ export class Wall extends DurableObject {
     if (msg.t === 'start') return this._start(ws, att, msg);
     if (msg.t === 'write') return this._write(ws, att, msg);
     if (msg.t === 'doodle') return this._doodle(ws, att, msg);
+    if (msg.t === 'place') return this._place(ws, att, msg);
     if (msg.t === 'style') return this._style(ws, att, msg);
     if (msg.t === 'sign') return this._sign(ws, att, msg);
     if (msg.t === 'release') return this._releaseOrInk(att.g, true);
@@ -250,6 +251,17 @@ export class Wall extends DurableObject {
     d.lastWrite = Date.now();
     await this.ctx.storage.put('drafts', drafts);
     this._broadcast({ t: 'doodle', gid: att.g, strokes: d.strokes }, ws);
+  }
+
+  /* nudge your own draft before it sets */
+  async _place(ws, att, msg) {
+    const drafts = await this._drafts();
+    const d = drafts[att.g];
+    if (!d) return;
+    d.x = this._pos(msg.x, d.x);
+    d.y = this._pos(msg.y, d.y);
+    await this.ctx.storage.put('drafts', drafts);
+    this._broadcast({ t: 'placed', gid: att.g, x: d.x, y: d.y }, ws);
   }
 
   async _style(ws, att, msg) {

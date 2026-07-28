@@ -472,12 +472,7 @@ body {
 }
 .pad .s1:hover { transform: rotate(-1.5deg) scale(1.05); color: var(--blue); }
 .pad .s1:active { cursor: grabbing; }
-.pad .padlabel {
-  position: absolute; left: 0; right: 0; bottom: -1.6rem;
-  text-align: center; margin: 0;
-  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--chrome-faint);
-}
+.pad .s1 span { text-align: center; padding: 0 0.4rem; line-height: 1.2; }
 .pad[hidden] { display: none; }
 
 .dragghost {
@@ -558,9 +553,121 @@ body {
 
 .wallerror { position: relative; z-index: 1; text-align: center; padding: 4rem 1rem; font-family: var(--hand); font-size: 1.3rem; color: var(--chrome-dim); }
 
+/* ---- peeling: the note lifts off the wall and curls away ---- */
+.note.peeling {
+  animation: peelaway 620ms cubic-bezier(0.35, 0, 0.4, 1) forwards;
+  transform-origin: 12% 12%;   /* pinned at the top-left, like a thumb */
+  pointer-events: none;
+  z-index: 20;
+}
+@keyframes peelaway {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) rotate3d(1, -1, 0, 0deg);
+    box-shadow: 0 1px 2px rgba(20,20,30,.10), 0 12px 22px -8px var(--note-shadow);
+  }
+  45% {
+    transform: translate(-50%, -54%) rotate(var(--tilt, 0deg)) rotate3d(1, -1, 0, 62deg) scale(1.04);
+    box-shadow: 0 18px 30px -6px var(--note-shadow-big);
+  }
+  100% {
+    transform: translate(-50%, -78%) rotate(var(--tilt, 0deg)) rotate3d(1, -1, 0, 128deg) scale(0.82);
+    box-shadow: 0 30px 40px -10px var(--note-shadow-big);
+    opacity: 0;
+  }
+}
+.space { transform-style: preserve-3d; perspective: 900px; }
+
+/* your draft on the wall is grabbable — nudge it before it sets */
+.note.yours { cursor: grab; }
+.note.yours.shifting { cursor: grabbing; z-index: 12; }
+.note.yours .grip {
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+  font-family: var(--sans); font-size: 8px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(44, 45, 48, 0.35); pointer-events: none;
+}
+
+/* where a dragged blank will land */
+.dropspot {
+  position: absolute;
+  width: 170px; height: 170px;
+  margin: -85px 0 0 -85px;
+  border: 2px dashed var(--blue);
+  border-radius: 3px 3px 8px 4px;
+  background: rgba(76, 111, 255, 0.07);
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .note.live { animation: none; }
   .hero .p .dot { animation: none; }
   .note .caret { animation: none; }
   .space.glide { transition: none; }
+  .note.peeling { animation-duration: 1ms; }
 }
+
+/* =========================================================================
+   the rules / privacy pages
+   ========================================================================= */
+.docbody { background: var(--table); }
+.doc {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: clamp(2rem, 6vh, 4rem) 1.4rem 5rem;
+  color: var(--chrome);
+  line-height: 1.65;
+}
+.doc h1 {
+  font-size: clamp(1.9rem, 5vw, 2.6rem); font-weight: 800;
+  letter-spacing: 0.02em; margin: 0 0 0.5rem;
+}
+.doc .lede { font-family: var(--hand); font-size: 1.35rem; color: var(--chrome-dim); margin: 0 0 2.4rem; }
+.doc h2 {
+  font-size: 1.05rem; font-weight: 800; letter-spacing: 0.03em;
+  margin: 2.4rem 0 0.6rem;
+}
+.doc p, .doc li { font-size: 0.95rem; color: var(--chrome-dim); }
+.doc strong { color: var(--chrome); font-weight: 700; }
+.doc ul { padding-left: 1.2rem; margin: 0.6rem 0 1rem; }
+.doc li { margin: 0.4rem 0; }
+.doc a { color: var(--blue); }
+.doc code {
+  font-family: var(--type); font-size: 0.85em;
+  background: var(--card); border: 1px solid var(--card-line);
+  border-radius: 4px; padding: 0.05rem 0.3rem;
+}
+.doc .crumb { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 2rem; }
+.doc .crumb a { text-decoration: none; color: var(--chrome-dim); }
+.doc .crumb a:hover { color: var(--blue); }
+.doc .crumb.bottom { margin: 3.5rem 0 0; }
+.doc .fineprint { font-size: 0.85rem; color: var(--chrome-faint); }
+.doc .placeholder {
+  background: rgba(255, 224, 102, 0.22);
+  border-left: 3px solid #ffe066;
+  padding: 0.6rem 0.9rem; border-radius: 0 6px 6px 0;
+}
+
+/* the crisis panel — a note pinned to the page */
+.doc .urgent {
+  --paper: #ff9fb0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,0) 14%),
+    var(--paper);
+  color: #2c2d30;
+  border-radius: 3px 3px 12px 4px;
+  padding: 1.4rem 1.5rem;
+  margin: 0 0 2.4rem;
+  box-shadow: 0 10px 26px var(--note-shadow);
+  transform: rotate(-0.5deg);
+}
+.doc .urgent.quiet { --paper: #8ed6ff; }
+.doc .urgent h2 { margin-top: 0; color: #2c2d30; }
+.doc .urgent p, .doc .urgent li { color: rgba(44, 45, 48, 0.85); }
+.doc .urgent strong { color: #1b1c1f; }
+.doc .urgent a { color: #1c3fb8; }
+.doc .urgent .help { margin: 0.8rem 0; }
+.doc .urgent .fineprint { color: rgba(44, 45, 48, 0.6); margin-bottom: 0; }
+
+.tail .links { margin-top: 0.5rem; }
+.tail .links a { color: var(--chrome-dim); text-decoration: none; }
+.tail .links a:hover { color: var(--blue); text-decoration: underline; }

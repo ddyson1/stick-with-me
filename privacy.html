@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>privacy — stick with me</title>
+  <meta name="description" content="Privacy policy for stick-with-me.com.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function () {
+      var t = localStorage.getItem('swm_theme');
+      if (t === 'night') document.documentElement.setAttribute('data-theme', 'night');
+    })();
+  </script>
+</head>
+<body class="docbody">
+
+  <main class="doc">
+    <p class="crumb"><a href="./">&larr; back to the wall</a></p>
+    <h1>privacy</h1>
+    <p class="lede">What stick with me knows about you. Short version: <strong>almost nothing, on purpose.</strong> Last updated 27 July 2026.</p>
+
+    <section class="urgent quiet">
+      <h2>The one thing to remember</h2>
+      <p><strong>Anything you put on a note is public forever.</strong> Please don't write your full name, address, phone number, workplace, or anything else that identifies you or someone else. The wall cannot un-know it once it's up.</p>
+    </section>
+
+    <h2>No accounts, no cookies, no tracking</h2>
+    <p>There are no user accounts. There are no cookies. There are no analytics, no advertising, no tracking pixels, and no third-party scripts of any kind. Fonts are served from this site, not from anyone else's.</p>
+
+    <h2>What is stored when you leave a note</h2>
+    <p>A note saved to the wall contains only:</p>
+    <ul>
+      <li>the words you typed, and any doodle you drew;</li>
+      <li>the name you chose to sign, if any (blank becomes &ldquo;a stranger&rdquo;);</li>
+      <li>the paper colour, ink colour and handwriting you picked;</li>
+      <li>where on the wall you stuck it, and the time it was stuck.</li>
+    </ul>
+    <p>That's the whole note. No IP address, no device details, no identifier is attached to it. Nothing in a stored note points back at you.</p>
+
+    <h2>What is stored about you, briefly</h2>
+    <ul>
+      <li><strong>A one-way hash of your IP address.</strong> To enforce &ldquo;one note per hour&rdquo; and to stop flooding, the engine keeps a SHA-256 hash of your IP with a timestamp. The hash cannot be reversed into your address by us, and it is not attached to your note. It is discarded once the hour has passed.</li>
+      <li><strong>A random session id</strong> while your browser is connected, so live typing reaches other people watching. It disappears when you close the tab.</li>
+      <li><strong>A peel token</strong> for fifteen minutes after you stick a note, so your browser — and only your browser — can take that note back. We store only a hash of it.</li>
+    </ul>
+
+    <h2>What your own browser stores</h2>
+    <p>Two things, in local storage on your device. Not cookies, never sent anywhere, and clearable by clearing your site data:</p>
+    <ul>
+      <li><code>swm_theme</code> — whether you prefer the lamp on or off.</li>
+      <li><code>swm_peels</code> — peel tokens for notes you just stuck, so the peel button works. Entries delete themselves after fifteen minutes.</li>
+    </ul>
+
+    <h2>Who else is involved</h2>
+    <p>Two infrastructure providers handle traffic, and like all web hosts they can see IP addresses at the network level as part of delivering the site:</p>
+    <ul>
+      <li><strong>GitHub Pages</strong> serves the page itself.</li>
+      <li><strong>Cloudflare</strong> runs the live engine that holds the wall.</li>
+    </ul>
+    <p>Server logs from the engine are kept briefly for debugging and abuse prevention and are not used to build any profile of you. No data is sold, rented, or shared with anyone else — there is nobody else.</p>
+
+    <h2>Your rights</h2>
+    <p>Since notes are anonymous and carry no identifier, we usually cannot tell which note is yours — which means we cannot look it up for you. What you can do:</p>
+    <ul>
+      <li><strong>Peel it</strong> yourself within fifteen minutes of sticking it.</li>
+      <li><strong>Ask for removal</strong> at any time: email <a href="mailto:dyson@plotflow.io">dyson@plotflow.io</a> with the note's coordinates (hover a note to see them) or a screenshot, and it will be taken down. You don't need to prove it's yours; if a note names or exposes you, that is reason enough.</li>
+    </ul>
+    <p>If you are in a place with data-protection rights such as the UK/EU (GDPR) or California (CCPA), you may request access to or deletion of any personal data held about you. Given the above, that is generally limited to a short-lived IP hash. Write to the address above.</p>
+
+    <h2>Children</h2>
+    <p>The wall is not intended for children under 13, and we do not knowingly collect anything from them. If you believe a child has posted something identifying, email us and it will be removed.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the date at the top changes with it.</p>
+
+    <h2>Contact</h2>
+    <p><a href="mailto:dyson@plotflow.io">dyson@plotflow.io</a></p>
+    <p class="placeholder">Data controller: <strong>[NAME / ENTITY &mdash; fill in]</strong>, <strong>[COUNTRY &mdash; fill in]</strong>.</p>
+
+    <p class="crumb bottom"><a href="./">&larr; back to the wall</a> &middot; <a href="terms.html">the rules</a></p>
+  </main>
+
+</body>
+</html>
