@@ -28,25 +28,18 @@
     <button class="lamp" id="lamp" type="button" aria-label="toggle the lamp"></button>
   </div>
 
-  <header class="hero">
-    <h1 class="t">stick with me</h1>
-    <p class="tag">an endless wall of support from strangers, for strangers.</p>
-
-    <div class="actions">
-      <button class="act take" id="actTake" type="button">
-        <span class="big">take what you need</span>
-        <span class="small">a note from the wall, for you</span>
-      </button>
-      <button class="act leave" id="actLeave" type="button">
-        <span class="big">leave what you can</span>
-        <span class="small">or drag a blank from the pad, below left</span>
-      </button>
-    </div>
-
-    <p class="p"><span class="dot"></span><span id="pres">the lamp is warming up&hellip;</span></p>
-    <p class="say" id="say"></p>
-    <p class="downhint" aria-hidden="true">the wall &darr; &middot; drag to wander &middot; scroll to zoom</p>
+  <!-- the only chrome: who we are, who's here, the fine print -->
+  <header class="topbar">
+    <h1 class="mark">stick with me</h1>
+    <p class="pres"><span class="dot"></span><span id="pres">the lamp is warming up&hellip;</span></p>
+    <p class="links">
+      <a href="terms.html">the rules</a> &middot;
+      <a href="privacy.html">privacy</a> &middot;
+      <a href="terms.html#help">not a crisis service</a>
+    </p>
   </header>
+
+  <p class="say" id="say"></p>
 
   <main class="wall" id="wall" aria-label="the wall">
     <div class="space" id="space"></div>
@@ -62,16 +55,6 @@
   <div class="pad" id="pad" title="pull a sheet onto the wall"></div>
 
   <div class="backbar" id="backbar" hidden><a href="./">back to the open wall</a></div>
-
-  <footer class="tail">
-    <p>an endless wall &middot; every note stays where its stranger stuck it.</p>
-    <p class="fine">no accounts &middot; notes sign &ldquo;a stranger&rdquo; unless you add a name &middot; be gentle</p>
-    <p class="fine links">
-      <a href="terms.html">the rules</a> &middot;
-      <a href="privacy.html">privacy</a> &middot;
-      <a href="terms.html#help">this is not a crisis service</a>
-    </p>
-  </footer>
 
   <!-- take-one overlay -->
   <div class="veil" id="veil" hidden>
@@ -258,7 +241,11 @@
       var pts = (st && st.notes.length ? st.notes.slice(-24) : [])
         .concat((st && st.drafts) || []);
       var hx = 0, hy = 0, hz = 1;
-      if (pts.length) {
+      if (!pts.length) {
+        /* nothing stuck yet — frame the welcome note */
+        var wr = wallEl.getBoundingClientRect();
+        hz = Math.min(1.15, Math.max(ZMIN, Math.min(wr.width / 330, wr.height / 400)));
+      } else {
         var minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9, sx = 0, sy = 0;
         pts.forEach(function (p) {
           var px = p.x || 0, py = p.y || 0;
@@ -408,7 +395,6 @@
       bn.style.transform = 'rotate(' + tilt(n.id) + 'deg)';
       veil.hidden = false;
     }
-    document.getElementById('actTake').addEventListener('click', takeOne);
     document.getElementById('another').addEventListener('click', takeOne);
     document.getElementById('goThere').addEventListener('click', function () {
       if (!lastTaken) return;
@@ -624,10 +610,10 @@
       pendingStart = true;
       send({ t: 'start', x: x, y: y, color: color });
     }
-    document.getElementById('actLeave').addEventListener('click', function () {
+    /* the welcome note's own links do the same two things */
+    function leaveOne() {
       startDraft(cam.x + (Math.random() - 0.5) * 240, cam.y + (Math.random() - 0.5) * 240, PAPERS[0]);
-      wallEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    }
 
     /* ---- the pad, fanned by colour: the sheet you pull is your paper ---- */
     (function buildPad() {
@@ -711,6 +697,37 @@
       carryColor = null;
     }
 
+    /* ---- the welcome: a plain white note at the origin ----
+       Not a real note — it isn't stored, can't be peeled, and isn't
+       counted. It's the house speaking, in the wall's own handwriting. */
+    function welcomeNote() {
+      var d = el('div', 'note welcome f-hand');
+      d.style.setProperty('--paper', '#ffffff');
+      d.style.color = INKS[0];
+      place(d, 0, 0, 'welcome');
+
+      d.appendChild(el('span', 'wtitle', 'stick with me'));
+      d.appendChild(el('p', 'wline', 'a wall of support from strangers, for strangers.'));
+      d.appendChild(el('p', 'wline', 'someone will read what you leave here on a day you will never know about. that is the whole idea.'));
+
+      var acts = el('p', 'wacts');
+      var a1 = el('a', null, 'take what you need');
+      a1.href = '#'; a1.title = 'a note from the wall, for you';
+      a1.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      a1.addEventListener('click', function (e) { e.preventDefault(); takeOne(); });
+      var a2 = el('a', null, 'leave what you can');
+      a2.href = '#'; a2.title = 'or pull a sheet from the pad';
+      a2.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      a2.addEventListener('click', function (e) { e.preventDefault(); leaveOne(); });
+      acts.appendChild(a1);
+      acts.appendChild(document.createTextNode(' · '));
+      acts.appendChild(a2);
+      d.appendChild(acts);
+
+      d.appendChild(el('p', 'wfoot', 'be gentle. someone here is having a hard day.'));
+      return d;
+    }
+
     /* ================= render ================= */
     function place(d, x, y, seed) {
       d.style.left = (x || 0) + 'px';
@@ -774,11 +791,7 @@
         spaceEl.appendChild(d);
       });
 
-      if (!st.notes.length && !(st.drafts || []).length) {
-        var e0 = el('p', 'bare', isArchive ? '' : 'a bare wall, going on forever.\ndrag a blank from the pad and be first.');
-        e0.style.left = '0px'; e0.style.top = '0px';
-        spaceEl.appendChild(e0);
-      }
+      if (!isArchive) spaceEl.appendChild(welcomeNote());
     }
 
     /* your draft can be nudged around the wall until it sets */
