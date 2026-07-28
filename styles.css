@@ -362,117 +362,171 @@ body {
 .tray .fbtn.type { font-family: var(--type); font-size: 10px; }
 .tray .fbtn.plain { font-family: var(--sans); font-size: 11px; }
 
-/* ---- the workbench: where your note is made ---- */
-.benchcard {
-  display: flex; gap: 1.4rem; align-items: stretch;
-  background: var(--card);
-  border: 1px solid var(--card-line);
-  border-radius: 18px;
-  box-shadow: 0 30px 70px rgba(10, 10, 20, 0.35);
-  padding: 1.4rem;
-  max-width: 92vw;
+/* ---- the desk: where your note is made, tools as objects ---- */
+.desk {
+  display: flex; gap: 1.6rem; align-items: flex-start;
+  background: linear-gradient(#efe9dd, #e6dfd0);
+  border-radius: 20px;
+  box-shadow: inset 0 2px 10px rgba(120, 100, 60, 0.18), 0 26px 60px rgba(10, 10, 20, 0.4);
+  padding: 1.6rem;
+  max-width: 94vw;
 }
+:root[data-theme="night"] .desk {
+  background: linear-gradient(#33353b, #2a2c31);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,.4), 0 26px 60px rgba(0,0,0,.6);
+}
+
 .benchnote {
   position: relative;
-  width: min(340px, 60vw); height: min(340px, 60vw);
+  width: min(330px, 56vw); height: min(330px, 56vw);
   border-radius: 3px 3px 12px 4px;
   padding: 18px 19px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 18%),
-    linear-gradient(200deg, rgba(0, 0, 0, 0.05), transparent 45%),
+    linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,0) 18%),
+    linear-gradient(200deg, rgba(0,0,0,.05), transparent 45%),
     var(--paper, #ffffff);
-  box-shadow: 0 10px 26px var(--note-shadow);
-  flex: 0 0 auto;
-  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(20,20,30,.12), 0 16px 30px -8px rgba(80, 60, 20, .35);
+  flex: 0 0 auto; overflow: hidden;
 }
 .benchnote::after {
   content: ""; position: absolute; right: 0; bottom: 0;
   width: 44px; height: 44px; pointer-events: none;
   background: linear-gradient(315deg,
-    rgba(0, 0, 0, 0.13) 0%, rgba(0, 0, 0, 0.04) 30%,
-    rgba(255, 255, 255, 0.28) 46%, transparent 62%);
+    rgba(0,0,0,.13) 0%, rgba(0,0,0,.04) 30%,
+    rgba(255,255,255,.28) 46%, transparent 62%);
   border-radius: 0 0 12px 0;
 }
 .benchnote textarea {
   position: relative; z-index: 1;
-  font-family: inherit; font-size: 26px; line-height: 1.4;
+  font-family: inherit; font-size: 25px; line-height: 1.4;
   color: inherit; background: transparent;
   border: 0; outline: none; resize: none; padding: 0;
   width: 100%; height: 100%;
 }
-.benchnote.f-type textarea { font-size: 17px; line-height: 1.7; }
-.benchnote.f-plain textarea { font-size: 18px; line-height: 1.6; }
+.benchnote.f-hand  textarea { font-family: var(--hand); font-size: 25px; line-height: 1.4; }
+.benchnote.f-type  textarea { font-family: var(--type); font-size: 16px; line-height: 1.7; }
+.benchnote.f-plain textarea { font-family: var(--sans); font-size: 17px; line-height: 1.6; }
 .benchnote svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
 .benchnote.drawing { cursor: crosshair; touch-action: none; }
-.benchnote.drawing textarea { pointer-events: none; opacity: 0.55; }
+.benchnote.drawing textarea { pointer-events: none; opacity: 0.5; }
 
-.benchside { display: flex; flex-direction: column; gap: 0.7rem; justify-content: center; min-width: 13rem; }
-.benchside .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.benchside .swatch {
-  width: 20px; height: 20px; border-radius: 50%;
-  border: 1.5px solid rgba(0, 0, 0, 0.12);
-  cursor: pointer; padding: 0;
+.tools { display: flex; flex-direction: column; gap: 1.15rem; min-width: 13rem; padding-top: 0.2rem; }
+.tool .lbl {
+  margin: 0 0 0.45rem;
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.18em;
+  text-transform: uppercase; color: rgba(90, 75, 45, 0.55);
 }
-.benchside .swatch.on { outline: 2px solid var(--blue); outline-offset: 1.5px; }
-.benchside .fbtn {
+:root[data-theme="night"] .tool .lbl { color: var(--chrome-faint); }
+.tools .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.tools .gap { width: 0.5rem; }
+
+/* paper: overlapping sheets you fan through */
+.sheetstack { display: flex; }
+.sheetsw {
+  all: unset; cursor: pointer;
+  width: 28px; height: 34px; border-radius: 2px;
+  margin-right: -14px;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 2px 5px rgba(80, 60, 20, 0.25);
+  transition: transform 140ms ease;
+}
+.sheetsw:hover { transform: translateY(-6px); }
+.sheetsw.on { transform: translateY(-9px); box-shadow: 0 6px 12px rgba(80,60,20,.32); }
+.sheetsw:last-child { margin-right: 0; }
+
+/* ink: a row of markers, uncapped = in use */
+.markers { display: flex; gap: 8px; align-items: flex-end; }
+.marker {
+  all: unset; cursor: pointer;
+  width: 16px; height: 58px;
+  border-radius: 3px 3px 7px 7px;
+  background: var(--ink, #2c2d30);
+  position: relative;
+  box-shadow: 0 3px 7px rgba(80, 60, 20, 0.32);
+  transition: height 160ms ease, transform 160ms ease;
+}
+.marker::after {              /* the cap */
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 17px;
+  background: rgba(0, 0, 0, 0.24);
+  border-radius: 3px 3px 0 0;
+  transition: opacity 160ms ease;
+}
+.marker:hover { transform: translateY(-3px); }
+.marker.on { height: 70px; }
+.marker.on::after { opacity: 0; }   /* uncapped */
+
+.tools .fbtn {
   all: unset; cursor: pointer;
   min-width: 30px; height: 26px;
   display: grid; place-items: center;
-  font-size: 14px; color: var(--chrome-dim);
-  border: 1px solid var(--card-line); border-radius: 7px;
-  padding: 0 6px;
+  font-size: 14px; color: rgba(80, 66, 40, 0.7);
+  border: 1px solid rgba(120, 100, 60, 0.3); border-radius: 7px;
+  padding: 0 6px; background: rgba(255, 255, 255, 0.5);
 }
-.benchside .fbtn.on { color: var(--blue); border-color: var(--blue); }
-.benchside .fbtn.hand { font-family: var(--hand); }
-.benchside .fbtn.type { font-family: var(--type); font-size: 11px; }
-.benchside .fbtn.plain { font-family: var(--sans); font-size: 12px; }
-.benchside input {
-  font-family: var(--hand); font-size: 1rem; color: var(--chrome);
+.tools .fbtn[hidden] { display: none; }
+.tools .fbtn.on { color: var(--blue); border-color: var(--blue); background: rgba(255,255,255,.85); }
+.tools .fbtn.hand { font-family: var(--hand); }
+.tools .fbtn.type { font-family: var(--type); font-size: 11px; }
+.tools .fbtn.plain { font-family: var(--sans); font-size: 12px; }
+:root[data-theme="night"] .tools .fbtn { background: rgba(255,255,255,.06); color: var(--chrome-dim); border-color: var(--card-line); }
+
+.tools input {
+  font-family: var(--hand); font-size: 1.05rem; color: rgba(60, 50, 30, 0.8);
   background: transparent;
-  border: 0; border-bottom: 1px dashed var(--card-line);
-  outline: none; padding: 0.2rem 0;
+  border: 0; border-bottom: 1px dashed rgba(120, 100, 60, 0.4);
+  outline: none; padding: 0.25rem 0;
 }
-.benchside input:focus { border-bottom-color: var(--blue); }
-.benchops { display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.3rem; }
+.tools input:focus { border-bottom-color: var(--blue); }
+:root[data-theme="night"] .tools input { color: var(--chrome); }
+
+.benchops { display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.2rem; }
 .benchops button {
   all: unset; cursor: pointer;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  padding: 0.45rem 0.9rem; border-radius: 8px;
+  font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 0.5rem 1rem; border-radius: 9px;
 }
-#bToss { color: var(--chrome-dim); }
+#bToss { color: rgba(80, 66, 40, 0.65); }
 #bToss:hover { color: #c23b57; }
-#bStick { color: #fff; background: var(--blue); }
+#bStick { color: #fff; background: var(--blue); box-shadow: 0 4px 10px rgba(76,111,255,.35); }
 #bStick:hover { background: var(--blue-deep); }
 #bStick:disabled { opacity: 0.5; cursor: default; }
-.benchhint { margin: 0; font-family: var(--hand); font-size: 0.95rem; color: var(--chrome-faint); }
-@media (max-width: 700px) {
-  .benchcard { flex-direction: column; overflow-y: auto; max-height: 92vh; }
-  .benchnote { width: min(340px, 84vw); height: min(340px, 84vw); }
+.benchhint { margin: 0; font-family: var(--hand); font-size: 0.98rem; color: rgba(90, 75, 45, 0.55); }
+:root[data-theme="night"] .benchhint { color: var(--chrome-faint); }
+
+@media (max-width: 760px) {
+  .desk { flex-direction: column; overflow-y: auto; max-height: 92vh; align-items: center; }
+  .benchnote { width: min(330px, 82vw); height: min(330px, 82vw); }
+  .tools { min-width: min(330px, 82vw); }
 }
 
-/* ---- the pad ---- */
+/* ---- the pad: fanned by colour ---- */
 .pad {
-  position: fixed; left: 1.4rem; bottom: 1.6rem; z-index: 40;
-  width: 6.8rem; height: 6.8rem;
+  position: fixed; left: 1.6rem; bottom: 2rem; z-index: 40;
+  width: 168px; height: 122px;
 }
 .pad .sheet {
-  position: absolute; inset: 0;
-  background: var(--card);
-  border: 1.5px solid var(--card-line);
-  border-radius: 10px;
-  box-shadow: 0 6px 16px var(--note-shadow);
-}
-.pad .s3 { transform: rotate(-3deg) translate(3px, 4px); opacity: 0.7; }
-.pad .s2 { transform: rotate(2deg) translate(-2px, 2px); opacity: 0.85; }
-.pad .s1 {
-  display: grid; place-items: center;
+  position: absolute; left: 40px; top: 6px;
+  width: 86px; height: 86px;
+  border-radius: 2px 2px 6px 3px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 10px var(--note-shadow);
+  transform-origin: 50% 138%;
+  transform: rotate(var(--deg, 0deg));
   cursor: grab; touch-action: none;
-  font-family: var(--hand); font-size: 1.1rem; color: var(--chrome-dim);
-  transition: transform 0.15s ease;
+  transition: transform 160ms cubic-bezier(.2,.8,.3,1), box-shadow 160ms ease;
 }
-.pad .s1:hover { transform: rotate(-1.5deg) scale(1.05); color: var(--blue); }
-.pad .s1:active { cursor: grabbing; }
-.pad .s1 span { text-align: center; padding: 0 0.4rem; line-height: 1.2; }
+.pad .sheet:hover {
+  transform: rotate(var(--deg, 0deg)) translateY(-14px) scale(1.04);
+  box-shadow: 0 12px 22px var(--note-shadow-big);
+  z-index: 20 !important;
+}
+.pad .sheet:active { cursor: grabbing; }
+.pad .padhint {
+  position: absolute; left: 0; right: 0; bottom: -0.2rem;
+  text-align: center; margin: 0;
+  font-family: var(--hand); font-size: 0.95rem; color: var(--chrome-faint);
+  pointer-events: none;
+}
 .pad[hidden] { display: none; }
 
 /* the note in your hand: real paper, real size, held above the wall */

@@ -58,11 +58,8 @@
     <div class="coords" id="coords" title="where you are — the first note is (0, 0)">0, 0</div>
   </main>
 
-  <div class="pad" id="pad" title="drag a blank onto the wall">
-    <div class="sheet s3"></div>
-    <div class="sheet s2"></div>
-    <div class="sheet s1" id="padTop"><span>leave a note</span></div>
-  </div>
+  <!-- the pad: fanned by colour — the sheet you pull decides your paper -->
+  <div class="pad" id="pad" title="pull a sheet onto the wall"></div>
 
   <div class="backbar" id="backbar" hidden><a href="./">back to the open wall</a></div>
 
@@ -91,24 +88,38 @@
     </div>
   </div>
 
-  <!-- the workbench: where your note is made -->
+  <!-- the desk: where your note is made, with tools as objects -->
   <div class="veil" id="bench" hidden>
-    <div class="benchcard" role="dialog" aria-label="your note">
+    <div class="desk" role="dialog" aria-label="your note">
       <div class="benchnote" id="benchNote">
         <svg id="benchSvg" viewBox="0 0 100 100" aria-hidden="true"></svg>
         <textarea id="bTa" maxlength="300" placeholder="something kind…"></textarea>
       </div>
-      <div class="benchside">
-        <div class="row modes">
-          <button type="button" id="mText" class="fbtn on" title="write">Aa</button>
-          <button type="button" id="mDraw" class="fbtn" title="doodle">&#9998;</button>
-          <button type="button" id="bUndo" class="fbtn" title="undo stroke" hidden>&#8630;</button>
-          <button type="button" id="bWipe" class="fbtn" title="clear doodle" hidden>&#10005;</button>
+
+      <div class="tools">
+        <div class="tool">
+          <p class="lbl">paper</p>
+          <div class="sheetstack" id="rowPaper"></div>
         </div>
-        <div class="row" id="rowPaper"></div>
-        <div class="row" id="rowInk"></div>
-        <div class="row" id="rowFont"></div>
+
+        <div class="tool">
+          <p class="lbl">pen</p>
+          <div class="markers" id="rowInk"></div>
+        </div>
+
+        <div class="tool">
+          <p class="lbl">hand</p>
+          <div class="row">
+            <span id="rowFont" class="row"></span>
+            <span class="gap"></span>
+            <button type="button" id="mDraw" class="fbtn" title="doodle on this note">&#9998;</button>
+            <button type="button" id="bUndo" class="fbtn" title="undo stroke" hidden>&#8630;</button>
+            <button type="button" id="bWipe" class="fbtn" title="clear doodle" hidden>&#10005;</button>
+          </div>
+        </div>
+
         <input id="bSign" maxlength="40" type="text" placeholder="— signed (optional)">
+
         <div class="benchops">
           <button type="button" id="bToss">toss it</button>
           <button type="button" id="bStick">stick it</button>
@@ -457,19 +468,12 @@
     }
     function closeBench() { bench.hidden = true; drawing = false; }
 
-    /* mode toggle */
-    document.getElementById('mText').addEventListener('click', function () {
-      drawing = false;
-      this.classList.add('on');
-      document.getElementById('mDraw').classList.remove('on');
-      benchApply();
-      bTa.focus();
-    });
+    /* the pencil toggles drawing; leaving it returns you to writing */
     document.getElementById('mDraw').addEventListener('click', function () {
-      drawing = true;
-      this.classList.add('on');
-      document.getElementById('mText').classList.remove('on');
+      drawing = !drawing;
+      this.classList.toggle('on', drawing);
       benchApply();
+      if (!drawing) bTa.focus();
     });
     document.getElementById('bUndo').addEventListener('click', function () {
       if (!mine || !mine.strokes.length) return;
@@ -518,21 +522,25 @@
       var rowI = document.getElementById('rowInk');
       var rowF = document.getElementById('rowFont');
       rowP.textContent = ''; rowI.textContent = ''; rowF.textContent = '';
+      /* paper: a stack of sheets you fan through */
       PAPERS.forEach(function (p) {
-        var s = el('button', 'swatch' + (mine && mine.color === p ? ' on' : ''));
+        var s = el('button', 'sheetsw' + (mine && mine.color === p ? ' on' : ''));
         s.type = 'button'; s.style.background = p;
+        s.setAttribute('aria-label', 'paper');
         s.addEventListener('click', function () {
           mine.color = p; benchApply(); markOn(rowP, s); scheduleStyle();
         });
         rowP.appendChild(s);
       });
+      /* ink: a row of markers — the uncapped one is the one you're writing with */
       INKS.forEach(function (ink) {
-        var s = el('button', 'swatch' + (mine && mine.ink === ink ? ' on' : ''));
-        s.type = 'button'; s.style.background = ink;
-        s.addEventListener('click', function () {
-          mine.ink = ink; benchApply(); markOn(rowI, s); scheduleStyle();
+        var m = el('button', 'marker' + (mine && mine.ink === ink ? ' on' : ''));
+        m.type = 'button'; m.style.setProperty('--ink', ink);
+        m.setAttribute('aria-label', 'pen');
+        m.addEventListener('click', function () {
+          mine.ink = ink; benchApply(); markOn(rowI, m); scheduleStyle();
         });
-        rowI.appendChild(s);
+        rowI.appendChild(m);
       });
       FONTS.forEach(function (f) {
         var b = el('button', 'fbtn ' + f + (mine && mine.font === f ? ' on' : ''), 'Aa');
@@ -610,28 +618,49 @@
     });
 
     /* ---- start a draft ---- */
-    function startDraft(x, y) {
+    function startDraft(x, y, color) {
       if (!wsOk) { say('the lamp is off — writing is closed right now.'); return; }
       if (mine) { openBench(); return; }
       pendingStart = true;
-      send({ t: 'start', x: x, y: y });
+      send({ t: 'start', x: x, y: y, color: color });
     }
     document.getElementById('actLeave').addEventListener('click', function () {
-      startDraft(cam.x + (Math.random() - 0.5) * 240, cam.y + (Math.random() - 0.5) * 240);
+      startDraft(cam.x + (Math.random() - 0.5) * 240, cam.y + (Math.random() - 0.5) * 240, PAPERS[0]);
       wallEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
+    /* ---- the pad, fanned by colour: the sheet you pull is your paper ---- */
+    (function buildPad() {
+      var spread = 58;                                  /* degrees across the fan */
+      PAPERS.forEach(function (p, i) {
+        var deg = -spread / 2 + (spread / (PAPERS.length - 1)) * i;
+        var s = el('div', 'sheet');
+        s.style.background = p;
+        s.style.setProperty('--deg', deg + 'deg');
+        s.style.zIndex = String(PAPERS.length - i);   /* first sheet rides on top */
+        s.dataset.color = p;
+        s.title = 'pull this one';
+        s.addEventListener('pointerdown', function (e) { padDown(e, p); });
+        padEl.appendChild(s);
+      });
+      var lbl = el('p', 'padhint', 'pull a sheet');
+      padEl.appendChild(lbl);
+    })();
+
     /* ---- the pad ---- */
-    var ghost = null, settleNext = false;
-    function padDown(e) {
+    var ghost = null, settleNext = false, carryColor = null;
+    function padDown(e, color) {
       if (isArchive || !wsOk || mine) {
         if (mine) { say('finish your note first.'); openBench(); }
         else if (!wsOk) say('the lamp is off — writing is closed right now.');
         return;
       }
       e.preventDefault();
-      /* lift a real sheet off the stack */
+      e.stopPropagation();
+      /* lift that sheet off the pad — its colour comes with it */
+      carryColor = color || PAPERS[0];
       ghost = el('div', 'carry', 'let go to stick it');
+      ghost.style.setProperty('--paper', carryColor);
       document.body.appendChild(ghost);
       moveGhost(e);
       document.addEventListener('pointermove', moveGhost);
@@ -677,10 +706,10 @@
       if (overWall(e)) {
         var w = screenToWorld(e.clientX, e.clientY);
         settleNext = true;
-        startDraft(w.x, w.y);
+        startDraft(w.x, w.y, carryColor);
       }
+      carryColor = null;
     }
-    document.getElementById('padTop').addEventListener('pointerdown', padDown);
 
     /* ================= render ================= */
     function place(d, x, y, seed) {

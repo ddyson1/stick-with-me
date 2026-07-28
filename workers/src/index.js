@@ -215,7 +215,10 @@ export class Wall extends DurableObject {
       const mins = Math.max(1, Math.ceil((INK_COOLDOWN_MS - (Date.now() - log[att.iph])) / 60000));
       return ws.send(JSON.stringify({ t: 'deny', reason: 'one note an hour — yours can return in ' + mins + ' min.' }));
     }
-    const color = COLORS[(notes.length + Object.keys(drafts).length) % COLORS.length];
+    /* the sheet you pulled off the pad decides the paper */
+    const color = (msg && COLORS.includes(msg.color))
+      ? msg.color
+      : COLORS[(notes.length + Object.keys(drafts).length) % COLORS.length];
     const x = this._pos(msg && msg.x, (Math.random() - 0.5) * 600);
     const y = this._pos(msg && msg.y, (Math.random() - 0.5) * 600);
     drafts[att.g] = {
