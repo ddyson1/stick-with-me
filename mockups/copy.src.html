@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>stick with me — words &amp; taking</title>
+<style>
+@font-face{font-family:"Caveat";src:url(data:font/woff2;base64,__CAVEAT__) format("woff2");font-display:swap}
+@font-face{font-family:"Special Elite";src:url(data:font/woff2;base64,__ELITE__) format("woff2");font-display:swap}
+:root{
+  --hand:"Caveat",cursive; --type:"Special Elite",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  --blue:#4c6fff; --blue-deep:#3a55c4; --table:#f6f5f2; --grid:rgba(0,0,0,.045);
+  --ink:#1d1e20; --dim:#6d6f74; --faint:#9b9da2; --card:#fff; --line:#dfe0e4;
+  --sh:rgba(20,20,30,.13); --shb:rgba(20,20,30,.22);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#0e0f12;color:#e9eaec;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.cap{max-width:48rem;margin:0 auto;padding:clamp(2rem,5vw,3rem) 1.4rem .9rem}
+.cap .n{font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:#6b727c}
+.cap h2{margin:.35rem 0 .45rem;font-size:1.3rem;font-weight:700}
+.cap p{margin:0;color:#9aa0aa;font-size:.9rem;line-height:1.6}
+.cap b{color:#e9eaec}
+.foot{padding:2.5rem 1.4rem 4rem;text-align:center;color:#6b727c;font-size:.78rem}
+.sec{background:var(--table);padding:clamp(2rem,5vw,3rem) 1.4rem;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px}
+.lab{max-width:64rem;margin:0 auto 1.1rem;font-size:.64rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
+.grid{max-width:64rem;margin:0 auto;display:flex;gap:1.6rem;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+
+/* a welcome note */
+.wn{width:250px;font-family:var(--hand);color:#2c2d30;padding:20px 21px 18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0) 16%),#fff;
+  border-radius:3px 3px 10px 4px;position:relative;
+  box-shadow:0 2px 4px rgba(20,20,30,.1),0 16px 30px -10px var(--shb)}
+.wn::after{content:"";position:absolute;right:0;bottom:0;width:30px;height:30px;
+  background:linear-gradient(315deg,rgba(0,0,0,.14),rgba(0,0,0,.04) 30%,rgba(255,255,255,.3) 46%,transparent 62%);
+  border-radius:0 0 10px 0}
+.wn .t{display:block;font-weight:700;font-size:22px;margin-bottom:9px}
+.wn p{margin:0 0 9px;font-size:16px;line-height:1.4}
+.wn .acts{margin:13px 0 0;font-size:15px;color:var(--blue-deep)}
+.wn .acts u{text-decoration:none;border-bottom:1px solid rgba(58,85,196,.35)}
+.wn .foot2{margin:14px 0 0;font-size:14px;color:rgba(44,45,48,.5)}
+.tag{max-width:250px;margin:.8rem auto 0;font-family:var(--sans);font-size:.72rem;line-height:1.5;color:var(--dim);text-align:center}
+
+/* pads */
+.padwrap{text-align:center}
+.fan{position:relative;width:150px;height:104px;margin:0 auto}
+.fan i{position:absolute;left:34px;top:4px;width:76px;height:76px;border-radius:2px;display:block;
+  border:1px solid rgba(0,0,0,.06);box-shadow:0 3px 8px var(--sh);transform-origin:50% 138%}
+.padcap{margin:.5rem 0 0;font-family:var(--hand);font-size:1rem;color:var(--faint)}
+.padcap.sans{font-family:var(--sans);font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+.padnote{margin:.5rem 0 0;font-size:.68rem;color:var(--dim)}
+
+/* take-flows */
+.screen{position:relative;width:min(29rem,92vw);height:17rem;border:1px solid var(--line);border-radius:12px;
+  background:var(--table);overflow:hidden;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;box-shadow:0 10px 28px var(--sh)}
+.mini{position:absolute;width:66px;height:66px;border-radius:2px 2px 5px 3px;font-family:var(--hand);font-size:9.5px;
+  color:#2c2d30;padding:7px 8px;line-height:1.22;
+  background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 20%),var(--p,#ffe066);
+  box-shadow:0 1px 2px rgba(20,20,30,.1),0 6px 12px -5px var(--sh)}
+.flowcap{max-width:29rem;margin:.8rem auto 0;font-size:.78rem;line-height:1.55;color:var(--dim)}
+.flowcap b{color:var(--ink)}
+.pill{position:absolute;font-family:var(--sans);font-size:.6rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;border-radius:999px;padding:.3rem .7rem;background:var(--blue);color:#fff}
+.bigmini{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-1.5deg);width:150px;
+  font-family:var(--hand);font-size:14px;line-height:1.35;color:#2c2d30;padding:14px 15px;
+  background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 18%),var(--p,#8ed6ff);
+  border-radius:3px 3px 9px 4px;box-shadow:0 18px 34px -10px var(--shb);z-index:9}
+.dim{position:absolute;inset:0;background:rgba(20,21,26,.4);backdrop-filter:blur(2px);z-index:8}
+.pocket{position:absolute;right:10px;bottom:10px;width:64px;height:44px;border-radius:6px 6px 3px 3px;
+  background:linear-gradient(#e8e4da,#dcd7c9);box-shadow:0 5px 12px var(--sh);z-index:9}
+.pocket span{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-family:var(--sans);
+  font-size:.5rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#7a7263}
+.pocket i{position:absolute;left:8px;top:-8px;width:46px;height:30px;border-radius:2px;background:#ffe066;
+  box-shadow:0 2px 6px var(--sh);transform:rotate(-4deg)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ WELCOME COPY ══════════════ -->
+<div class="cap">
+  <p class="n">part one &middot; the welcome note</p>
+  <h2>Five things it could say</h2>
+  <p>Same white note at the origin. What changes is <b>what it asks of you</b> — and how much it says before getting out of the way.</p>
+</div>
+
+<section class="sec">
+  <p class="lab">a &middot; today</p>
+  <div class="grid">
+    <div>
+      <div class="wn">
+        <span class="t">stick with me</span>
+        <p>a wall of support from strangers, for strangers.</p>
+        <p>someone will read what you leave here on a day you will never know about. that is the whole idea.</p>
+        <p class="acts"><u>take what you need</u> · <u>leave what you can</u></p>
+        <p class="foot2">be gentle. someone here is having a hard day.</p>
+      </div>
+      <p class="tag">Explains the mechanic, then the ethic. Slightly long — five separate thoughts.</p>
+    </div>
+
+    <div>
+      <div class="wn">
+        <span class="t">stick with me</span>
+        <p>strangers leave notes here for strangers they will never meet.</p>
+        <p>one of them might be for you.</p>
+        <p class="acts"><u>take one</u> · <u>leave one</u></p>
+        <p class="foot2">be gentle.</p>
+      </div>
+      <p class="tag"><b>B · shorter, warmer.</b> Leads with the image, not the instruction. &ldquo;One of them might be for you&rdquo; does the inviting.</p>
+    </div>
+
+    <div>
+      <div class="wn">
+        <span class="t">stick with me</span>
+        <p>you are not the only one having this kind of day.</p>
+        <p>proof is stuck all over this wall. add to it, or take what you need from it.</p>
+        <p class="acts"><u>take one</u> · <u>leave one</u></p>
+      </div>
+      <p class="tag"><b>C · speaks to the reader first.</b> Opens with the feeling that brought them here rather than describing the site.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:1.2rem">
+  <div class="grid">
+    <div>
+      <div class="wn">
+        <span class="t">stick with me</span>
+        <p>a wall of notes between strangers.</p>
+        <p>take what you need.<br>leave what you can.</p>
+        <p class="acts"><u>take one</u> · <u>leave one</u></p>
+      </div>
+      <p class="tag"><b>D · barest.</b> Four lines, no explanation, no instruction about tone. Trusts people entirely.</p>
+    </div>
+
+    <div>
+      <div class="wn">
+        <span class="t">stick with me</span>
+        <p>somebody stood where you are standing and wrote something down in case it helped.</p>
+        <p>read theirs. leave yours. that's all this is.</p>
+        <p class="acts"><u>take one</u> · <u>leave one</u></p>
+        <p class="foot2">be gentle — someone here is having a hard day.</p>
+      </div>
+      <p class="tag"><b>E · the most human.</b> &ldquo;Somebody stood where you are standing&rdquo; makes the stranger real. Longest, and the one most likely to be actually read.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PAD COPY ══════════════ -->
+<div class="cap">
+  <p class="n">part two &middot; the pad</p>
+  <h2>&ldquo;pull a sheet&rdquo; &mdash; and six other ways to say it</h2>
+  <p>The label under the fan. It has to explain a gesture people haven't seen before <b>without sounding like a manual</b>.</p>
+</div>
+
+<section class="sec">
+  <div class="grid">
+    <div class="padwrap"><div class="fan">
+      <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+      <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+      <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+      <i style="background:#fff;transform:rotate(25deg);z-index:1"></i></div>
+      <p class="padcap">pull a sheet</p><p class="padnote">today &mdash; reads like stationery instructions</p></div>
+
+    <div class="padwrap"><div class="fan">
+      <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+      <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+      <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+      <i style="background:#fff;transform:rotate(25deg);z-index:1"></i></div>
+      <p class="padcap">drag one out &rarr;</p><p class="padnote">says the gesture out loud</p></div>
+
+    <div class="padwrap"><div class="fan">
+      <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+      <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+      <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+      <i style="background:#fff;transform:rotate(25deg);z-index:1"></i></div>
+      <p class="padcap">your turn</p><p class="padnote">an invitation, not an instruction</p></div>
+
+    <div class="padwrap"><div class="fan">
+      <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+      <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+      <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+      <i style="background:#fff;transform:rotate(25deg);z-index:1"></i></div>
+      <p class="padcap">write one</p><p class="padnote">plainest verb; matches &ldquo;leave one&rdquo;</p></div>
+
+    <div class="padwrap"><div class="fan">
+      <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+      <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+      <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+      <i style="background:#fff;transform:rotate(25deg);z-index:1"></i></div>
+      <p class="padcap sans">blanks</p><p class="padnote">names the object, lets the fan explain itself</p></div>
+
+    <div class="padwrap"><div class="fan">
+      <i style="background:#ffe066;transform:rotate(-25deg);z-index:7"></i><i style="background:#ff9fb0;transform:rotate(-16deg);z-index:6"></i>
+      <i style="background:#8ed6ff;transform:rotate(-8deg);z-index:5"></i><i style="background:#b6f2a8;transform:rotate(0deg);z-index:4"></i>
+      <i style="background:#ffc78a;transform:rotate(8deg);z-index:3"></i><i style="background:#d9b8ff;transform:rotate(16deg);z-index:2"></i>
+      <i style="background:#fff;transform:rotate(25deg);z-index:1"></i></div>
+      <p class="padcap">&nbsp;</p><p class="padnote">nothing at all &mdash; a pad of paper needs no caption</p></div>
+  </div>
+</section>
+
+<!-- ══════════════ TAKING ══════════════ -->
+<div class="cap">
+  <p class="n">part three &middot; taking a note</p>
+  <h2>What &ldquo;take what you need&rdquo; should actually do</h2>
+  <p>Right now it opens a random note in an overlay and you close it again — nothing is really <em>taken</em>. Four alternatives, in rising order of how literal the taking is.</p>
+</div>
+
+<section class="sec">
+  <p class="lab">t1 &middot; read it where it lives</p>
+  <div class="grid"><div>
+    <div class="screen">
+      <span class="mini" style="--p:#ffe066;left:12%;top:16%;transform:rotate(-3deg)">you've survived every bad day</span>
+      <span class="mini" style="--p:#ff9fb0;left:64%;top:18%;transform:rotate(2deg)">drink water</span>
+      <span class="mini" style="--p:#b6f2a8;left:70%;top:62%;transform:rotate(-2deg)">you are not behind</span>
+      <div class="bigmini" style="--p:#8ed6ff">it's okay to rest. resting is still moving.
+        <span style="display:block;margin-top:9px;font-size:11px;opacity:.5;text-align:right">— a stranger</span></div>
+    </div>
+    <p class="flowcap"><b>The camera flies to a real note and enlarges it in place</b> — no overlay, no dimming. You end up somewhere on the wall, next to its neighbours, free to wander from there. Taking becomes <em>going</em>.</p>
+  </div></div>
+</section>
+
+<section class="sec">
+  <p class="lab">t2 &middot; it comes off in your hand</p>
+  <div class="grid"><div>
+    <div class="screen">
+      <span class="mini" style="--p:#ffe066;left:12%;top:16%;transform:rotate(-3deg)">you've survived every bad day</span>
+      <span class="mini" style="--p:#ff9fb0;left:64%;top:18%;transform:rotate(2deg)">drink water</span>
+      <div class="dim"></div>
+      <div class="bigmini" style="--p:#8ed6ff;transform:translate(-50%,-50%) rotate(3deg) scale(1.05)">it's okay to rest. resting is still moving.
+        <span style="display:block;margin-top:9px;font-size:11px;opacity:.5;text-align:right">— a stranger</span>
+        <span style="position:absolute;left:0;right:0;bottom:-22px;text-align:center;font-family:var(--sans);font-size:.55rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff">keep it &nbsp;·&nbsp; put it back</span></div>
+    </div>
+    <p class="flowcap"><b>The note peels off the wall</b> with the same curl as your own peel, and hovers in front of you. <em>Keep it</em> saves it to your pocket; <em>put it back</em> returns it. The wall visibly still has it — nothing is removed from anyone else.</p>
+  </div></div>
+</section>
+
+<section class="sec">
+  <p class="lab">t3 &middot; a pocket of notes you kept</p>
+  <div class="grid"><div>
+    <div class="screen">
+      <span class="mini" style="--p:#ffe066;left:12%;top:16%;transform:rotate(-3deg)">you've survived every bad day</span>
+      <span class="mini" style="--p:#ff9fb0;left:40%;top:44%;transform:rotate(2deg)">drink water</span>
+      <span class="mini" style="--p:#b6f2a8;left:66%;top:20%;transform:rotate(-2deg)">you are not behind</span>
+      <div class="pocket"><i></i><span>pocket · 3</span></div>
+    </div>
+    <p class="flowcap">Builds on T2: kept notes go into a <b>small pocket in the corner</b>, saved in your own browser only. Somewhere to return to on a bad night without hunting the wall. Nothing leaves your device; nobody sees what you kept.</p>
+  </div></div>
+</section>
+
+<section class="sec">
+  <p class="lab">t4 &middot; one note, chosen for you</p>
+  <div class="grid"><div>
+    <div class="screen" style="display:grid;place-items:center">
+      <div style="text-align:center">
+        <div class="bigmini" style="--p:#ffe066;position:static;transform:rotate(-2deg);margin:0 auto">someone out here is glad you're still going.
+          <span style="display:block;margin-top:9px;font-size:11px;opacity:.5;text-align:right">— a stranger</span></div>
+        <p style="font-family:var(--sans);font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:1rem 0 0">another &nbsp;·&nbsp; go to it &nbsp;·&nbsp; keep it</p>
+      </div>
+    </div>
+    <p class="flowcap"><b>Deliberately ceremonial</b> — the wall recedes entirely and you're handed exactly one note, alone on the screen. Closest to today, but slowed down and given weight. Best if &ldquo;take what you need&rdquo; is meant to feel like being handed something.</p>
+  </div></div>
+</section>
+
+<p class="foot">stick with me &middot; words &amp; taking &middot; all notes placeholder</p>
+
+</body>
+</html>
