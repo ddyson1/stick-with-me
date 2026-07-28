@@ -106,8 +106,24 @@ body {
 .act:hover, .act:focus-visible { transform: translateY(-3px) rotate(0deg) !important; box-shadow: 0 14px 30px var(--note-shadow-big); }
 .act .big { display: block; font-family: var(--hand); font-size: 1.5rem; line-height: 1.2; color: #2c2d30; }
 .act .small { display: block; margin-top: 0.4rem; font-size: 0.72rem; letter-spacing: 0.02em; color: rgba(44, 45, 48, 0.55); }
-.act.take { background: #ffe066; transform: rotate(-1.2deg); }
-.act.leave { background: #8ed6ff; transform: rotate(1deg); }
+.act {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.30), rgba(255, 255, 255, 0) 26%),
+    linear-gradient(200deg, rgba(0, 0, 0, 0.04), transparent 50%),
+    var(--paper, #ffe066);
+  border-radius: 3px 3px 12px 4px;
+  position: relative; overflow: hidden;
+}
+.act::after {
+  content: ""; position: absolute; right: 0; bottom: 0;
+  width: 34px; height: 34px; pointer-events: none;
+  background: linear-gradient(315deg,
+    rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.04) 30%,
+    rgba(255, 255, 255, 0.28) 46%, transparent 62%);
+  border-radius: 0 0 12px 0;
+}
+.act.take { --paper: #ffe066; transform: rotate(-1.2deg); }
+.act.leave { --paper: #8ed6ff; transform: rotate(1deg); }
 
 .hero .p { font-size: 0.85rem; color: var(--chrome-dim); margin: 1.5rem 0 0; }
 .hero .p .dot {
@@ -196,7 +212,15 @@ body {
   border: 1px solid var(--card-line);
   border-radius: 999px;
   padding: 0.25rem 0.8rem;
-  user-select: none; pointer-events: none;
+  user-select: none;
+  cursor: text;
+  min-width: 5.5rem; text-align: center;
+}
+.coords:hover { color: var(--blue); border-color: var(--blue); }
+.coords input {
+  font: inherit; letter-spacing: inherit; color: var(--chrome);
+  background: transparent; border: 0; outline: none;
+  width: 9rem; text-align: center;
 }
 
 /* ---- notes ---- */
@@ -204,13 +228,36 @@ body {
   position: absolute;
   width: 170px; height: 170px;
   padding: 14px 15px;
-  border-radius: 8px;
+  border-radius: 2px 2px 8px 3px;
   font-size: 17px; line-height: 1.35;
   color: #2c2d30;
   overflow: hidden;
-  box-shadow: 0 8px 20px var(--note-shadow);
+  /* real paper: adhesive sheen along the top, a breath of shade toward
+     the bottom, the chosen colour underneath */
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 22%),
+    linear-gradient(200deg, rgba(0, 0, 0, 0.05), transparent 45%),
+    var(--paper, #ffe066);
+  box-shadow:
+    0 1px 2px rgba(20, 20, 30, 0.10),
+    0 12px 22px -8px var(--note-shadow);
+  transition: box-shadow 0.25s ease;
 }
-.note:hover { z-index: 6; }
+/* the lifted corner */
+.note::after {
+  content: ""; position: absolute; right: 0; bottom: 0;
+  width: 30px; height: 30px; pointer-events: none;
+  background: linear-gradient(315deg,
+    rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0.05) 30%,
+    rgba(255, 255, 255, 0.30) 46%, transparent 62%);
+  border-radius: 0 0 8px 0;
+}
+.note:hover {
+  z-index: 6;
+  box-shadow:
+    0 2px 3px rgba(20, 20, 30, 0.10),
+    0 20px 32px -10px var(--note-shadow-big);
+}
 .note.f-hand { font-family: var(--hand); font-size: 17px; }
 .note.f-type { font-family: var(--type); font-size: 12.5px; line-height: 1.55; }
 .note.f-plain { font-family: var(--sans); font-size: 13px; line-height: 1.5; }
@@ -328,10 +375,23 @@ body {
 .benchnote {
   position: relative;
   width: min(340px, 60vw); height: min(340px, 60vw);
-  border-radius: 10px;
+  border-radius: 3px 3px 12px 4px;
   padding: 18px 19px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 18%),
+    linear-gradient(200deg, rgba(0, 0, 0, 0.05), transparent 45%),
+    var(--paper, #ffffff);
   box-shadow: 0 10px 26px var(--note-shadow);
   flex: 0 0 auto;
+  overflow: hidden;
+}
+.benchnote::after {
+  content: ""; position: absolute; right: 0; bottom: 0;
+  width: 44px; height: 44px; pointer-events: none;
+  background: linear-gradient(315deg,
+    rgba(0, 0, 0, 0.13) 0%, rgba(0, 0, 0, 0.04) 30%,
+    rgba(255, 255, 255, 0.28) 46%, transparent 62%);
+  border-radius: 0 0 12px 0;
 }
 .benchnote textarea {
   position: relative; z-index: 1;
@@ -447,9 +507,22 @@ body {
   width: min(24rem, 92vw);
   min-height: 16rem;
   padding: 2rem 2.1rem 3.4rem;
-  border-radius: 14px;
+  border-radius: 3px 3px 14px 4px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 18%),
+    linear-gradient(200deg, rgba(0, 0, 0, 0.05), transparent 45%),
+    var(--paper, #ffe066);
   box-shadow: 0 30px 70px rgba(10, 10, 20, 0.4);
   position: relative;
+  overflow: hidden;
+}
+.bignote::after {
+  content: ""; position: absolute; right: 0; bottom: 0;
+  width: 52px; height: 52px; pointer-events: none;
+  background: linear-gradient(315deg,
+    rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0.05) 30%,
+    rgba(255, 255, 255, 0.30) 46%, transparent 62%);
+  border-radius: 0 0 14px 0;
 }
 .bignote .txt {
   font-size: clamp(1.5rem, 4vw, 1.9rem);

@@ -188,14 +188,30 @@
     })();
     function savePeels() { localStorage.setItem('swm_peels', JSON.stringify(peels)); }
 
-    /* ================= camera ================= */
+    /* ================= camera =================
+       cam is what's rendered; tgt is where the camera wants to be.
+       A spring loop eases cam toward tgt — everything glides. */
     var cam = { x: 0, y: 0, z: 1 };
+    var tgt = { x: 0, y: 0, z: 1 };
     var ZMIN = 0.2, ZMAX = 2.2;
     var coordsEl = document.getElementById('coords');
+    var editingCoords = false;
     function applyCam() {
       spaceEl.style.transform =
         'translate(' + (-cam.x * cam.z) + 'px,' + (-cam.y * cam.z) + 'px) scale(' + cam.z + ')';
-      coordsEl.textContent = Math.round(cam.x) + ', ' + Math.round(cam.y);
+      if (!editingCoords) coordsEl.textContent = Math.round(cam.x) + ', ' + Math.round(cam.y);
+    }
+    var rafOn = false;
+    function kick() { if (!rafOn) { rafOn = true; requestAnimationFrame(step); } }
+    function step() {
+      var dx = tgt.x - cam.x, dy = tgt.y - cam.y, dz = tgt.z - cam.z;
+      cam.x += dx * 0.16; cam.y += dy * 0.16; cam.z += dz * 0.22;
+      if (Math.abs(dx) < 0.4 && Math.abs(dy) < 0.4 && Math.abs(dz) < 0.0015) {
+        cam.x = tgt.x; cam.y = tgt.y; cam.z = tgt.z;
+        applyCam(); rafOn = false; return;
+      }
+      applyCam();
+      requestAnimationFrame(step);
     }
     function screenToWorld(cx, cy) {
       var r = wallEl.getBoundingClientRect();
@@ -205,25 +221,29 @@
       };
     }
     function zoomAt(cx, cy, factor) {
-      var before = screenToWorld(cx, cy);
-      cam.z = Math.min(ZMAX, Math.max(ZMIN, cam.z * factor));
-      var after = screenToWorld(cx, cy);
-      cam.x += before.x - after.x;
-      cam.y += before.y - after.y;
-      applyCam();
+      var r = wallEl.getBoundingClientRect();
+      var px = cx - (r.left + r.width / 2), py = cy - (r.top + r.height / 2);
+      var wx = px / tgt.z + tgt.x, wy = py / tgt.z + tgt.y;
+      tgt.z = Math.min(ZMAX, Math.max(ZMIN, tgt.z * factor));
+      tgt.x = wx - px / tgt.z;
+      tgt.y = wy - py / tgt.z;
+      kick();
     }
     function glideTo(x, y, minZ) {
-      cam.x = x; cam.y = y;
-      if (minZ && cam.z < minZ) cam.z = 1;
-      spaceEl.classList.add('glide');
-      setTimeout(function () { spaceEl.classList.remove('glide'); }, 650);
+      tgt.x = x; tgt.y = y;
+      if (minZ && tgt.z < minZ) tgt.z = 1;
+      kick();
+    }
+    function jumpTo(x, y, z) {
+      cam.x = tgt.x = x; cam.y = tgt.y = y;
+      if (z) cam.z = tgt.z = z;
       applyCam();
     }
     function goHome(animate) {
       var pts = (st && st.notes.length ? st.notes.slice(-24) : [])
         .concat((st && st.drafts) || []);
-      if (!pts.length) { cam = { x: 0, y: 0, z: 1 }; }
-      else {
+      var hx = 0, hy = 0, hz = 1;
+      if (pts.length) {
         var minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9, sx = 0, sy = 0;
         pts.forEach(function (p) {
           var px = p.x || 0, py = p.y || 0;
@@ -233,16 +253,42 @@
         });
         var r = wallEl.getBoundingClientRect();
         var spanX = (maxx - minx) + 700, spanY = (maxy - miny) + 700;
-        cam.x = sx / pts.length;
-        cam.y = sy / pts.length;
-        cam.z = Math.min(1.1, Math.max(ZMIN, Math.min(r.width / spanX, r.height / spanY)));
+        hx = sx / pts.length;
+        hy = sy / pts.length;
+        hz = Math.min(1.1, Math.max(ZMIN, Math.min(r.width / spanX, r.height / spanY)));
       }
-      if (animate) {
-        spaceEl.classList.add('glide');
-        setTimeout(function () { spaceEl.classList.remove('glide'); }, 650);
-      }
-      applyCam();
+      if (animate) { tgt.x = hx; tgt.y = hy; tgt.z = hz; kick(); }
+      else jumpTo(hx, hy, hz);
     }
+    /* type an address, go there */
+    coordsEl.addEventListener('click', function () {
+      if (editingCoords) return;
+      editingCoords = true;
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.value = Math.round(tgt.x) + ', ' + Math.round(tgt.y);
+      coordsEl.textContent = '';
+      coordsEl.appendChild(input);
+      input.focus(); input.select();
+      function done(go) {
+        if (!editingCoords) return;
+        editingCoords = false;
+        if (go) {
+          var m2 = input.value.match(/(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)/);
+          if (m2) glideTo(parseFloat(m2[1]), parseFloat(m2[2]));
+          else say('coordinates look like: 120, -450');
+        }
+        coordsEl.textContent = Math.round(cam.x) + ', ' + Math.round(cam.y);
+      }
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') done(true);
+        else if (e.key === 'Escape') done(false);
+        e.stopPropagation();
+      });
+      input.addEventListener('blur', function () { done(false); });
+      input.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    });
+
     document.getElementById('home').addEventListener('click', function () { goHome(true); });
     document.getElementById('zin').addEventListener('click', function () {
       var r = wallEl.getBoundingClientRect();
@@ -254,8 +300,9 @@
     });
 
     var pans = {}, pinch = null;
+    var vel = { x: 0, y: 0, t: 0 };
     wallEl.addEventListener('pointerdown', function (e) {
-      if (e.target.closest('.note') || e.target.closest('.wallops')) return;
+      if (e.target.closest('.note') || e.target.closest('.wallops') || e.target.closest('.coords')) return;
       pans[e.pointerId] = { x: e.clientX, y: e.clientY };
       wallEl.setPointerCapture(e.pointerId);
       var ids = Object.keys(pans);
@@ -263,6 +310,8 @@
         var a = pans[ids[0]], b = pans[ids[1]];
         pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) };
       }
+      vel = { x: 0, y: 0, t: performance.now() };
+      tgt.x = cam.x; tgt.y = cam.y; /* grabbing the wall stops any glide */
       wallEl.classList.add('grabbing');
     });
     wallEl.addEventListener('pointermove', function (e) {
@@ -270,8 +319,13 @@
       if (!p) return;
       var ids = Object.keys(pans);
       if (ids.length === 1) {
-        cam.x -= (e.clientX - p.x) / cam.z;
-        cam.y -= (e.clientY - p.y) / cam.z;
+        var dx = (e.clientX - p.x) / cam.z, dy = (e.clientY - p.y) / cam.z;
+        cam.x -= dx; cam.y -= dy;
+        tgt.x = cam.x; tgt.y = cam.y;   /* rigid under the finger */
+        var now = performance.now(), dt = Math.max(1, now - vel.t);
+        vel.x = vel.x * 0.6 + (dx / dt) * 0.4;
+        vel.y = vel.y * 0.6 + (dy / dt) * 0.4;
+        vel.t = now;
         applyCam();
       }
       p.x = e.clientX; p.y = e.clientY;
@@ -283,9 +337,18 @@
       }
     });
     function panEnd(e) {
+      var had = pans[e.pointerId];
       delete pans[e.pointerId];
       if (Object.keys(pans).length < 2) pinch = null;
-      if (!Object.keys(pans).length) wallEl.classList.remove('grabbing');
+      if (!Object.keys(pans).length) {
+        wallEl.classList.remove('grabbing');
+        if (had && performance.now() - vel.t < 90) {
+          /* let go while moving: the wall keeps its momentum */
+          tgt.x = cam.x - vel.x * 160;
+          tgt.y = cam.y - vel.y * 160;
+          kick();
+        }
+      }
     }
     wallEl.addEventListener('pointerup', panEnd);
     wallEl.addEventListener('pointercancel', panEnd);
@@ -322,7 +385,7 @@
       document.getElementById('bigWhere').textContent = 'stuck at ( ' + Math.round(n.x || 0) + ', ' + Math.round(n.y || 0) + ' )';
       var bn = document.getElementById('bignote');
       bn.className = 'bignote ' + fontClass(n.font);
-      bn.style.background = n.color || PAPERS[0];
+      bn.style.setProperty('--paper', n.color || PAPERS[0]);
       document.getElementById('bigTxt').style.color = n.ink || INKS[0];
       var bs = document.getElementById('bigSvg');
       bs.style.color = n.ink || INKS[0];
@@ -355,7 +418,7 @@
     function benchApply() {
       if (!mine) return;
       benchNote.className = 'benchnote ' + fontClass(mine.font) + (drawing ? ' drawing' : '');
-      benchNote.style.background = mine.color;
+      benchNote.style.setProperty('--paper', mine.color);
       benchNote.style.color = mine.ink;
       benchSvg.style.color = mine.ink;
       drawStrokes(benchSvg, mine.strokes);
@@ -587,7 +650,7 @@
 
       st.notes.forEach(function (n) {
         var d = el('div', 'note ' + fontClass(n.font) + (n.text.length > 90 ? ' longtext' : ''));
-        d.style.background = n.color || PAPERS[0];
+        d.style.setProperty('--paper', n.color || PAPERS[0]);
         d.style.color = n.ink || INKS[0];
         place(d, n.x, n.y, n.id);
         d.title = '( ' + Math.round(n.x || 0) + ', ' + Math.round(n.y || 0) + ' )';
@@ -611,7 +674,7 @@
       (st.drafts || []).forEach(function (dr) {
         var isMe = mine && dr.gid === st.you;
         var d = el('div', 'note live ' + fontClass(isMe ? mine.font : dr.font) + (isMe ? ' yours' : ''));
-        d.style.background = (isMe ? mine.color : dr.color) || '#ffffff';
+        d.style.setProperty('--paper', (isMe ? mine.color : dr.color) || '#ffffff');
         d.style.color = (isMe ? mine.ink : dr.ink) || INKS[0];
         place(d, dr.x, dr.y, dr.gid);
         var strokes = isMe ? mine.strokes : dr.strokes;
@@ -769,8 +832,7 @@
       render();
       var at = (qs.get('at') || '').split(',').map(Number);
       if (at.length === 2 && isFinite(at[0]) && isFinite(at[1])) {
-        cam.x = at[0]; cam.y = at[1]; cam.z = 1;
-        applyCam();
+        jumpTo(at[0], at[1], 1);
         setTimeout(function () { wallEl.scrollIntoView({ behavior: 'smooth' }); }, 400);
       } else {
         goHome(false);
