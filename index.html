@@ -622,7 +622,7 @@
     });
 
     /* ---- the pad ---- */
-    var ghost = null;
+    var ghost = null, settleNext = false;
     function padDown(e) {
       if (isArchive || !wsOk || mine) {
         if (mine) { say('finish your note first.'); openBench(); }
@@ -630,44 +630,53 @@
         return;
       }
       e.preventDefault();
-      ghost = el('div', 'dragghost');
+      /* lift a real sheet off the stack */
+      ghost = el('div', 'carry', 'let go to stick it');
       document.body.appendChild(ghost);
       moveGhost(e);
       document.addEventListener('pointermove', moveGhost);
       document.addEventListener('pointerup', padUp, { once: true });
       document.addEventListener('pointercancel', function () {
         document.removeEventListener('pointermove', moveGhost);
-        clearDropspot();
+        clearCast();
         if (ghost) { ghost.remove(); ghost = null; }
       }, { once: true });
     }
-    var dropspot = null;
+    var cast = null;
+    function overWall(e) {
+      var r = wallEl.getBoundingClientRect();
+      return e.clientY > r.top && e.clientY < r.bottom && e.clientX > r.left && e.clientX < r.right;
+    }
     function moveGhost(e) {
       if (!ghost) return;
       ghost.style.left = e.clientX + 'px';
       ghost.style.top = e.clientY + 'px';
-      var r = wallEl.getBoundingClientRect();
-      var over = e.clientY > r.top && e.clientY < r.bottom && e.clientX > r.left && e.clientX < r.right;
+      var over = overWall(e);
       ghost.classList.toggle('over', over);
-      /* show the wall exactly where this will land */
+      /* held over the wall it takes the wall's scale — you see its true size,
+         and its shadow falls on the spot it will occupy */
       if (over) {
-        if (!dropspot) { dropspot = el('div', 'dropspot'); spaceEl.appendChild(dropspot); }
+        ghost.style.transform = 'scale(' + cam.z + ') rotate(-1.5deg)';
+        ghost.textContent = '';
+        if (!cast) { cast = el('div', 'castshadow'); spaceEl.appendChild(cast); }
         var w = screenToWorld(e.clientX, e.clientY);
-        dropspot.style.left = w.x + 'px';
-        dropspot.style.top = w.y + 'px';
-      } else if (dropspot) {
-        dropspot.remove(); dropspot = null;
+        cast.style.left = w.x + 'px';
+        cast.style.top = w.y + 'px';
+      } else {
+        ghost.style.transform = 'scale(0.88) rotate(-4deg)';
+        ghost.textContent = 'let go to stick it';
+        clearCast();
       }
     }
-    function clearDropspot() { if (dropspot) { dropspot.remove(); dropspot = null; } }
+    function clearCast() { if (cast) { cast.remove(); cast = null; } }
     function padUp(e) {
       document.removeEventListener('pointermove', moveGhost);
-      clearDropspot();
+      clearCast();
       if (!ghost) return;
       ghost.remove(); ghost = null;
-      var r = wallEl.getBoundingClientRect();
-      if (e.clientY > r.top && e.clientY < r.bottom && e.clientX > r.left && e.clientX < r.right) {
+      if (overWall(e)) {
         var w = screenToWorld(e.clientX, e.clientY);
+        settleNext = true;
         startDraft(w.x, w.y);
       }
     }
@@ -727,6 +736,11 @@
         if (isMe) {
           d.appendChild(el('span', 'grip', 'drag to move · tap to edit'));
           makeDraftDraggable(d);
+          if (settleNext) {           /* it just landed — let it settle */
+            settleNext = false;
+            d.classList.add('settling');
+            setTimeout(function () { d.classList.remove('settling'); }, 400);
+          }
         }
         spaceEl.appendChild(d);
       });

@@ -475,19 +475,62 @@ body {
 .pad .s1 span { text-align: center; padding: 0 0.4rem; line-height: 1.2; }
 .pad[hidden] { display: none; }
 
-.dragghost {
+/* the note in your hand: real paper, real size, held above the wall */
+.carry {
   position: fixed; z-index: 60;
-  width: 150px; height: 150px;
-  margin: -75px 0 0 -75px;
-  background: var(--card);
-  border: 1.5px solid var(--card-line);
-  border-radius: 10px;
-  box-shadow: 0 18px 44px var(--note-shadow-big);
-  transform: rotate(-2deg);
+  width: 170px; height: 170px;
+  margin: -85px 0 0 -85px;
+  border-radius: 3px 3px 8px 4px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,0) 20%),
+    linear-gradient(200deg, rgba(0,0,0,.05), transparent 45%),
+    var(--paper, #ffffff);
+  box-shadow: 0 26px 44px -10px rgba(20, 20, 30, 0.45);
   pointer-events: none;
-  opacity: 0.92;
+  display: grid; place-items: center;
+  font-family: var(--hand); font-size: 15px;
+  color: rgba(44, 45, 48, 0.4);
+  opacity: 0.94;                 /* see what's underneath while you aim */
+  transition: box-shadow 160ms ease;
 }
-.dragghost.over { border-color: var(--blue); outline: 2px solid var(--blue); transform: rotate(0.5deg) scale(1.04); }
+.carry::after {
+  content: ""; position: absolute; right: 0; bottom: 0;
+  width: 30px; height: 30px;
+  background: linear-gradient(315deg,
+    rgba(0,0,0,.16) 0%, rgba(0,0,0,.05) 30%,
+    rgba(255,255,255,.30) 46%, transparent 62%);
+  border-radius: 0 0 8px 0;
+}
+/* over the wall it settles closer — the shadow tightens as it nears the surface */
+.carry.over { box-shadow: 0 14px 24px -8px rgba(20, 20, 30, 0.4); }
+
+/* the shadow it casts on the wall, where it will land */
+.castshadow {
+  position: absolute;
+  width: 170px; height: 170px;
+  /* offset down-right: the light is up-left, so the shadow peeks out
+     and the note reads as held above the surface */
+  margin: -70px 0 0 -70px;
+  border-radius: 3px 3px 8px 4px;
+  background: rgba(20, 20, 30, 0.16);
+  filter: blur(9px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* a note settling onto the wall after you let go */
+.note.settling { animation: settle 380ms cubic-bezier(0.2, 0.9, 0.3, 1); }
+@keyframes settle {
+  0%   { transform: translate(-50%, -54%) rotate(var(--tilt, 0deg)) scale(1.10); }
+  60%  { transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) scale(0.985); }
+  100% { transform: translate(-50%, -50%) rotate(var(--tilt, 0deg)) scale(1); }
+}
+
+/* overlapping is the point — paper stacks, and what you touch comes to the top */
+.note { z-index: 1; }
+.note.live { z-index: 4; }
+.note.yours { z-index: 5; }
+.note:hover { z-index: 30; }
 
 /* ---- overlay ---- */
 .veil[hidden] { display: none; }
@@ -585,17 +628,6 @@ body {
   font-family: var(--sans); font-size: 8px; font-weight: 700;
   letter-spacing: 0.14em; text-transform: uppercase;
   color: rgba(44, 45, 48, 0.35); pointer-events: none;
-}
-
-/* where a dragged blank will land */
-.dropspot {
-  position: absolute;
-  width: 170px; height: 170px;
-  margin: -85px 0 0 -85px;
-  border: 2px dashed var(--blue);
-  border-radius: 3px 3px 8px 4px;
-  background: rgba(76, 111, 255, 0.07);
-  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
