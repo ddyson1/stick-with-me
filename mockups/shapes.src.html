@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>stick with me — editor, pad &amp; front door</title>
+<style>
+@font-face{font-family:"Caveat";src:url(data:font/woff2;base64,__CAVEAT__) format("woff2");font-display:swap}
+@font-face{font-family:"Special Elite";src:url(data:font/woff2;base64,__ELITE__) format("woff2");font-display:swap}
+:root{
+  --hand:"Caveat",cursive; --type:"Special Elite",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  --blue:#4c6fff; --blue-deep:#3a55c4;
+  --table:#f6f5f2; --grid:rgba(0,0,0,.045);
+  --ink:#1d1e20; --dim:#6d6f74; --faint:#9b9da2;
+  --card:#fff; --line:#dfe0e4;
+  --sh:rgba(20,20,30,.13); --shb:rgba(20,20,30,.22);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#0e0f12;color:#e9eaec;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.cap{max-width:48rem;margin:0 auto;padding:clamp(2rem,5vw,3rem) 1.4rem .9rem}
+.cap .n{font-size:.68rem;letter-spacing:.3em;text-transform:uppercase;color:#6b727c}
+.cap h2{margin:.35rem 0 .45rem;font-size:1.3rem;font-weight:700}
+.cap p{margin:0;color:#9aa0aa;font-size:.9rem;line-height:1.6}
+.cap b{color:#e9eaec}
+.sec{background:var(--table);color:var(--ink);padding:clamp(2rem,5vw,3.5rem) 1.4rem;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px}
+.hdr{max-width:60rem;margin:0 auto 1.2rem;font-size:.66rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:var(--faint)}
+.stage{max-width:60rem;margin:0 auto;display:flex;justify-content:center;align-items:flex-start;gap:2rem;flex-wrap:wrap}
+.foot{padding:2.5rem 1.4rem 4rem;text-align:center;color:#6b727c;font-size:.78rem}
+
+/* shared paper */
+.paper{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0) 20%),
+    linear-gradient(200deg,rgba(0,0,0,.05),transparent 45%),
+    var(--p,#ffe066);
+  border-radius:3px 3px 10px 4px; position:relative; overflow:hidden;
+  box-shadow:0 1px 2px rgba(20,20,30,.1),0 12px 22px -8px var(--sh);
+}
+.paper::after{content:"";position:absolute;right:0;bottom:0;width:30px;height:30px;
+  background:linear-gradient(315deg,rgba(0,0,0,.16) 0%,rgba(0,0,0,.05) 30%,rgba(255,255,255,.3) 46%,transparent 62%);
+  border-radius:0 0 10px 0}
+.note-txt{font-family:var(--hand);font-size:19px;line-height:1.35;color:#2c2d30;padding:16px 17px}
+
+/* ============================================================ EDITORS */
+.ed{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px var(--sh);padding:1.1rem}
+.lbl{font-size:.58rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:0 0 .35rem}
+.sw{width:19px;height:19px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);display:inline-block;cursor:pointer}
+.sw.on{outline:2px solid var(--blue);outline-offset:1.5px}
+.fb{min-width:28px;height:24px;display:inline-grid;place-items:center;border:1px solid var(--line);border-radius:6px;font-size:12px;color:var(--dim);cursor:pointer}
+.fb.on{color:var(--blue);border-color:var(--blue)}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.btn-stick{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:.5rem 1rem;font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.btn-toss{background:none;border:0;color:var(--dim);font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+
+/* E1 the desk */
+.desk{background:linear-gradient(#efe9dd,#e6dfd0);border-radius:18px;padding:1.6rem;box-shadow:inset 0 2px 8px rgba(120,100,60,.18),0 20px 44px var(--shb);
+  display:flex;gap:1.5rem;align-items:flex-start}
+.desk .marker{width:15px;height:64px;border-radius:3px 3px 6px 6px;position:relative;box-shadow:0 3px 7px rgba(80,60,20,.3);cursor:pointer}
+.desk .marker::after{content:"";position:absolute;top:0;left:0;right:0;height:16px;background:rgba(0,0,0,.22);border-radius:3px 3px 0 0}
+.desk .markers{display:flex;gap:7px;align-items:flex-end}
+.desk .swatchstack{display:flex}
+.desk .swatchstack .s{width:26px;height:32px;border-radius:2px;margin-right:-13px;box-shadow:0 2px 5px rgba(80,60,20,.25);cursor:pointer;border:1px solid rgba(0,0,0,.06)}
+.desk .swatchstack .s:hover{transform:translateY(-5px)}
+.desk .tools{display:flex;flex-direction:column;gap:1.1rem;min-width:11rem}
+
+/* E2 bare */
+.bare-wrap{display:flex;flex-direction:column;align-items:center;gap:.9rem}
+.bare-bar{display:flex;gap:.9rem;align-items:center;background:var(--card);border:1px solid var(--line);
+  border-radius:999px;padding:.5rem .9rem;box-shadow:0 10px 26px var(--sh)}
+.bare-bar .div{width:1px;height:20px;background:var(--line)}
+
+/* E3 compact bar */
+.compact{display:flex;flex-direction:column;gap:0}
+.compact .bar{display:flex;align-items:center;gap:.8rem;background:var(--card);border:1px solid var(--line);border-top:0;
+  border-radius:0 0 14px 14px;padding:.6rem .8rem}
+.compact .bar .div{width:1px;height:22px;background:var(--line)}
+.compact .bar .grow{flex:1}
+
+/* E4 margin tools */
+.margin-note{position:relative;padding:34px 40px 34px 34px}
+.margin-note .toptabs{position:absolute;top:-13px;left:14px;display:flex;gap:5px}
+.margin-note .toptabs .t{width:26px;height:15px;border-radius:4px 4px 0 0;box-shadow:0 -2px 4px rgba(0,0,0,.1);cursor:pointer}
+.margin-note .pens{position:absolute;left:-14px;top:44px;display:flex;flex-direction:column;gap:7px}
+.margin-note .pens .pn{width:11px;height:26px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,.2);cursor:pointer}
+.margin-note .fonts{position:absolute;bottom:-12px;right:16px;display:flex;gap:5px}
+.margin-note .fonts .f{background:var(--card);border:1px solid var(--line);border-radius:5px;font-size:10px;padding:2px 6px;cursor:pointer}
+
+/* ============================================================ PADS */
+.padrow{display:flex;gap:3.2rem;justify-content:center;align-items:flex-end;flex-wrap:wrap}
+.padbox{text-align:center}
+.padbox .name{margin-top:1.5rem;font-size:.62rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.pd{position:relative;width:104px;height:104px}
+.pd .sh{position:absolute;inset:0;border-radius:3px 3px 8px 4px;background:var(--card);border:1px solid var(--line);box-shadow:0 5px 12px var(--sh)}
+
+/* P2 fanned */
+.fan{position:relative;width:150px;height:110px}
+.fan .s{position:absolute;left:22px;top:8px;width:88px;height:88px;border-radius:3px;box-shadow:0 4px 10px var(--sh);transform-origin:50% 100%;border:1px solid rgba(0,0,0,.05)}
+.fan .s:hover{transform:translateY(-8px) rotate(var(--r))!important;z-index:9}
+
+/* P3 dispenser */
+.disp{position:relative;width:118px;height:112px}
+.disp .tray{position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(#3b3d44,#25272c);border-radius:6px 6px 9px 9px;box-shadow:0 8px 18px var(--shb)}
+.disp .tray::before{content:"";position:absolute;top:6px;left:12px;right:12px;height:3px;background:rgba(255,255,255,.12);border-radius:2px}
+.disp .sheet{position:absolute;left:14px;top:0;width:90px;height:88px;border-radius:3px;box-shadow:0 5px 12px var(--sh)}
+
+/* P4 curled */
+.curl{position:relative;width:104px;height:104px}
+.curl .s{position:absolute;inset:0;border-radius:3px}
+.curl .lift{position:absolute;right:-2px;top:-2px;width:34px;height:34px;
+  background:linear-gradient(225deg,#fff 40%,#e8e6df 62%,rgba(0,0,0,.14));
+  border-radius:0 3px 0 60%;box-shadow:-3px 4px 8px rgba(0,0,0,.18);transform:rotate(4deg)}
+
+/* P5 thick pad */
+.thick{position:relative;width:104px;height:104px}
+.thick .layer{position:absolute;left:0;right:0;border-radius:3px;background:#faf8f2;border:1px solid rgba(0,0,0,.06)}
+
+/* ============================================================ FRONT DOORS */
+.screen{max-width:60rem;margin:0 auto;height:23rem;position:relative;overflow:hidden;
+  border:1px solid var(--line);border-radius:14px;background:var(--table);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:28px 28px;box-shadow:0 16px 40px var(--sh)}
+.mini{position:absolute;width:84px;height:84px;border-radius:2px 2px 6px 3px;font-family:var(--hand);font-size:11px;
+  color:#2c2d30;padding:9px 10px;line-height:1.25;
+  background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 20%),var(--p,#ffe066);
+  box-shadow:0 1px 2px rgba(20,20,30,.1),0 8px 14px -6px var(--sh)}
+
+/* D1 wall-first */
+.d1bar{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:1rem;
+  background:rgba(255,255,255,.86);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:999px;
+  padding:.45rem .5rem .45rem 1.1rem;box-shadow:0 8px 22px var(--sh);z-index:5}
+.d1bar .ttl{font-weight:800;font-size:.85rem;letter-spacing:.02em}
+.d1bar .pill{font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border-radius:999px;padding:.32rem .7rem;cursor:pointer}
+.d1bar .take{background:#ffe066;color:#4a3d00}
+.d1bar .leave{background:var(--blue);color:#fff}
+
+/* D2 welcome note */
+.d2note{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-1.5deg);width:230px;
+  font-family:var(--hand);font-size:15px;line-height:1.4;color:#2c2d30;padding:18px 19px;
+  background:linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0) 18%),#fff;
+  border-radius:3px 3px 10px 4px;box-shadow:0 2px 4px rgba(20,20,30,.1),0 20px 36px -10px var(--shb);z-index:5}
+.d2note .big{font-weight:700;display:block;margin-bottom:6px;font-size:17px}
+.d2note .go{display:inline-block;margin-top:10px;font-family:var(--sans);font-size:.6rem;font-weight:800;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+
+/* D4 split */
+.d4left{position:absolute;left:0;top:0;bottom:0;width:44%;background:var(--card);border-right:1px solid var(--line);
+  padding:1.6rem 1.4rem;display:flex;flex-direction:column;justify-content:center;gap:.7rem;z-index:5}
+.d4left h3{margin:0;font-size:1.25rem;font-weight:800}
+.d4left .sub{font-family:var(--hand);font-size:1.05rem;color:var(--dim);margin:0}
+.d4left .acts{display:flex;gap:.5rem;margin-top:.5rem}
+.d4left .pill{font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border-radius:8px;padding:.45rem .7rem;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ EDITORS ═══════════════════════════ -->
+<div class="cap">
+  <p class="n">part one &middot; the editor</p>
+  <h2>Four ways to make a note</h2>
+  <p>Today's editor is a white card with a tool column — it works, but it reads like a settings panel bolted to a sticky. These push in different directions: <b>toward objects</b>, <b>toward nothing</b>, or <b>toward tighter chrome</b>.</p>
+</div>
+
+<section class="sec">
+  <p class="hdr">E1 &middot; the desk &mdash; tools as objects</p>
+  <div class="stage">
+    <div class="desk">
+      <div class="paper" style="--p:#ffe066;width:250px;height:250px">
+        <div class="note-txt">you don't have to be okay today<span style="display:block;margin-top:14px;font-size:15px;opacity:.5">&mdash; a stranger</span></div>
+      </div>
+      <div class="tools">
+        <div>
+          <p class="lbl">paper</p>
+          <div class="swatchstack">
+            <span class="s" style="background:#ffe066"></span><span class="s" style="background:#ff9fb0"></span>
+            <span class="s" style="background:#8ed6ff"></span><span class="s" style="background:#b6f2a8"></span>
+            <span class="s" style="background:#ffc78a"></span><span class="s" style="background:#d9b8ff"></span>
+            <span class="s" style="background:#fff"></span>
+          </div>
+        </div>
+        <div>
+          <p class="lbl">pen</p>
+          <div class="markers">
+            <span class="marker" style="background:#2c2d30"></span>
+            <span class="marker" style="background:#2456d6;height:72px"></span>
+            <span class="marker" style="background:#c23b57"></span>
+            <span class="marker" style="background:#1e7a46"></span>
+            <span class="marker" style="background:#6b3fb8"></span>
+          </div>
+        </div>
+        <div>
+          <p class="lbl">hand &middot; doodle</p>
+          <div class="row">
+            <span class="fb on" style="font-family:var(--hand);font-size:15px">Aa</span>
+            <span class="fb" style="font-family:var(--type);font-size:10px">Aa</span>
+            <span class="fb">Aa</span>
+            <span class="fb" style="margin-left:6px">&#9998;</span>
+          </div>
+        </div>
+        <div class="row" style="justify-content:space-between;margin-top:.3rem">
+          <button class="btn-toss">toss it</button>
+          <button class="btn-stick">stick it</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cap"><p class="n">e1</p><p>A felt desk. Paper is a <b>stack of sheets you fan through</b>, ink is a <b>row of markers</b> (the taller one is uncapped — the one you're using), and the doodle toggle sits with the hands. Nothing looks like a form control. Warmest, most in keeping with everything else we've built.</p></div>
+
+<section class="sec">
+  <p class="hdr">E2 &middot; bare &mdash; the note is the whole interface</p>
+  <div class="stage">
+    <div class="bare-wrap">
+      <div class="paper" style="--p:#8ed6ff;width:290px;height:290px">
+        <div class="note-txt" style="font-size:21px">someone out here is glad you're still going<span style="display:block;margin-top:16px;font-size:15px;opacity:.5">&mdash; a stranger</span></div>
+      </div>
+      <div class="bare-bar">
+        <span class="sw" style="background:#ffe066"></span>
+        <span class="sw" style="background:#ff9fb0"></span>
+        <span class="sw on" style="background:#8ed6ff"></span>
+        <span class="sw" style="background:#b6f2a8"></span>
+        <span class="sw" style="background:#fff"></span>
+        <span class="div"></span>
+        <span class="sw" style="background:#2c2d30;width:15px;height:15px"></span>
+        <span class="sw" style="background:#2456d6;width:15px;height:15px"></span>
+        <span class="sw" style="background:#c23b57;width:15px;height:15px"></span>
+        <span class="div"></span>
+        <span class="fb on" style="font-family:var(--hand);font-size:15px">Aa</span>
+        <span class="fb">&#9998;</span>
+        <span class="div"></span>
+        <button class="btn-stick">stick it</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cap"><p class="n">e2</p><p>No card at all — the note floats big on the dimmed wall with <b>one pill of tools beneath it</b>. Fewest pixels, most focus on the words. &ldquo;Toss&rdquo; moves into a small &times; on the note corner. Cleanest, but the tools are less discoverable.</p></div>
+
+<section class="sec">
+  <p class="hdr">E3 &middot; compact &mdash; toolbar welded to the note</p>
+  <div class="stage">
+    <div class="compact">
+      <div class="paper" style="--p:#b6f2a8;width:300px;height:250px;border-radius:12px 12px 0 0">
+        <div class="note-txt">small steps count. tiny ones. crumbs.</div>
+      </div>
+      <div class="bar">
+        <span class="sw" style="background:#ffe066"></span>
+        <span class="sw" style="background:#ff9fb0"></span>
+        <span class="sw on" style="background:#b6f2a8"></span>
+        <span class="sw" style="background:#fff"></span>
+        <span class="div"></span>
+        <span class="sw" style="background:#2c2d30;width:15px;height:15px"></span>
+        <span class="sw" style="background:#2456d6;width:15px;height:15px"></span>
+        <span class="div"></span>
+        <span class="fb on" style="font-family:var(--hand);font-size:15px">Aa</span>
+        <span class="fb">&#9998;</span>
+        <span class="grow"></span>
+        <button class="btn-toss">toss</button>
+        <button class="btn-stick">stick it</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cap"><p class="n">e3</p><p>The tools become <b>the bottom edge of the note itself</b> — one object, no floating panel. Most compact and the least redesign from what exists. Safe, tidy, a bit software-ish.</p></div>
+
+<section class="sec">
+  <p class="hdr">E4 &middot; margins &mdash; tools tucked into the note's edges</p>
+  <div class="stage">
+    <div class="paper margin-note" style="--p:#ffc78a;width:300px;height:280px;overflow:visible">
+      <div class="toptabs">
+        <span class="t" style="background:#ffe066"></span><span class="t" style="background:#ff9fb0"></span>
+        <span class="t" style="background:#8ed6ff"></span><span class="t" style="background:#ffc78a;height:19px"></span>
+        <span class="t" style="background:#fff"></span>
+      </div>
+      <div class="pens">
+        <span class="pn" style="background:#2c2d30"></span><span class="pn" style="background:#2456d6;height:32px"></span>
+        <span class="pn" style="background:#c23b57"></span><span class="pn" style="background:#1e7a46"></span>
+      </div>
+      <div class="note-txt" style="padding:0">ask for help. it's a skill, not a defeat.</div>
+      <div class="fonts">
+        <span class="f" style="font-family:var(--hand)">Aa</span>
+        <span class="f" style="font-family:var(--type);font-size:9px">Aa</span>
+        <span class="f">Aa</span>
+        <span class="f">&#9998;</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="cap"><p class="n">e4</p><p>Paper colours become <b>tabs on the top edge</b>, inks a <b>pen tray down the left</b>, hands a small strip at the bottom. The note is literally the only object on screen. Most inventive; also the fiddliest on a phone.</p></div>
+
+<!-- ═══════════════════════════ PADS ═══════════════════════════ -->
+<div class="cap">
+  <p class="n">part two &middot; the pad</p>
+  <h2>What you pull a blank from</h2>
+  <p>The stack in the corner. <b>P2 is worth a hard look</b> — if the pad is fanned by colour, choosing your paper becomes <em>which sheet you grab</em>, and the editor loses a whole control.</p>
+</div>
+
+<section class="sec">
+  <div class="padrow">
+    <div class="padbox">
+      <div class="pd">
+        <span class="sh" style="transform:rotate(-3deg) translate(3px,4px);opacity:.7"></span>
+        <span class="sh" style="transform:rotate(2deg) translate(-2px,2px);opacity:.85"></span>
+        <span class="sh" style="display:grid;place-items:center;font-family:var(--hand);font-size:1rem;color:var(--dim)">leave a note</span>
+      </div>
+      <p class="name">P1 &middot; today</p>
+    </div>
+
+    <div class="padbox">
+      <div class="fan">
+        <span class="s" style="background:#d9b8ff;--r:-24deg;transform:rotate(-24deg)"></span>
+        <span class="s" style="background:#8ed6ff;--r:-16deg;transform:rotate(-16deg)"></span>
+        <span class="s" style="background:#b6f2a8;--r:-8deg;transform:rotate(-8deg)"></span>
+        <span class="s" style="background:#ffc78a;--r:0deg;transform:rotate(0deg)"></span>
+        <span class="s" style="background:#ff9fb0;--r:8deg;transform:rotate(8deg)"></span>
+        <span class="s" style="background:#ffe066;--r:16deg;transform:rotate(16deg)"></span>
+      </div>
+      <p class="name">P2 &middot; fanned by colour</p>
+    </div>
+
+    <div class="padbox">
+      <div class="disp">
+        <span class="sheet" style="background:#ffe066;transform:rotate(-2deg)"></span>
+        <span class="tray"></span>
+      </div>
+      <p class="name">P3 &middot; dispenser</p>
+    </div>
+
+    <div class="padbox">
+      <div class="curl">
+        <span class="s" style="background:#f4f2ec;box-shadow:0 5px 12px var(--sh);inset:4px 4px 0 0"></span>
+        <span class="s" style="background:#fffdf6;box-shadow:0 5px 12px var(--sh)"></span>
+        <span class="lift"></span>
+      </div>
+      <p class="name">P4 &middot; curled corner</p>
+    </div>
+
+    <div class="padbox">
+      <div class="thick">
+        <span class="layer" style="top:8px;bottom:-6px"></span>
+        <span class="layer" style="top:4px;bottom:-3px"></span>
+        <span class="layer" style="top:0;bottom:0;background:#ffe066;display:grid;place-items:center;font-family:var(--hand);font-size:.95rem;color:rgba(60,50,30,.55)">leave a note</span>
+      </div>
+      <p class="name">P5 &middot; thick pad</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ FRONT DOOR ═══════════════════════════ -->
+<div class="cap">
+  <p class="n">part three &middot; the default screen</p>
+  <h2>What people see first</h2>
+  <p>Right now a tall hero pushes the wall below the fold — you have to scroll to find the thing itself. All three of these <b>put the wall on screen immediately</b>.</p>
+</div>
+
+<section class="sec">
+  <p class="hdr">D1 &middot; wall first &mdash; chrome shrinks to one floating bar</p>
+  <div class="screen">
+    <div class="d1bar">
+      <span class="ttl">stick with me</span>
+      <span class="pill take">take one</span>
+      <span class="pill leave">leave one</span>
+    </div>
+    <span class="mini" style="--p:#ffe066;left:14%;top:34%;transform:rotate(-2deg)">you've survived every bad day so far</span>
+    <span class="mini" style="--p:#8ed6ff;left:38%;top:52%;transform:rotate(1.5deg)">it's okay to rest</span>
+    <span class="mini" style="--p:#ff9fb0;left:60%;top:30%;transform:rotate(-1deg)">drink water. text them back.</span>
+    <span class="mini" style="--p:#b6f2a8;left:76%;top:58%;transform:rotate(2deg)">you are not behind</span>
+  </div>
+</section>
+<div class="cap"><p class="n">d1</p><p>You land <b>inside the wall</b>. Title and both actions live in a single frosted pill at the top. Everything else — pad, zoom, coordinates — stays where it is. Most direct; the wall sells itself.</p></div>
+
+<section class="sec">
+  <p class="hdr">D2 &middot; the welcome note &mdash; the wall explains itself</p>
+  <div class="screen">
+    <span class="mini" style="--p:#ffe066;left:10%;top:22%;transform:rotate(-3deg)">you've survived every bad day so far</span>
+    <span class="mini" style="--p:#8ed6ff;left:22%;top:64%;transform:rotate(2deg)">it's okay to rest</span>
+    <span class="mini" style="--p:#ff9fb0;left:72%;top:26%;transform:rotate(1deg)">drink water. text them back.</span>
+    <span class="mini" style="--p:#b6f2a8;left:78%;top:64%;transform:rotate(-2deg)">you are not behind</span>
+    <div class="d2note">
+      <span class="big">stick with me</span>
+      a wall of support from strangers, for strangers. take what you need. leave what you can.
+      <span class="go">&#8594; take one &nbsp;·&nbsp; leave one</span>
+    </div>
+  </div>
+</section>
+<div class="cap"><p class="n">d2</p><p>The introduction <b>is a note on the wall</b>, pinned at the origin — same paper, same handwriting, same shadows as everything else. No chrome at all. Wanders away as you explore and comes back via the ⌂ button. The most charming; the most confident.</p></div>
+
+<section class="sec">
+  <p class="hdr">D3 &middot; split &mdash; a reading rail beside the wall</p>
+  <div class="screen">
+    <div class="d4left">
+      <h3>stick with me</h3>
+      <p class="sub">a wall of support from strangers, for strangers.</p>
+      <div class="acts">
+        <span class="pill" style="background:#ffe066;color:#4a3d00">take what you need</span>
+        <span class="pill" style="background:var(--blue);color:#fff">leave what you can</span>
+      </div>
+      <p style="font-size:.66rem;color:var(--faint);margin:.6rem 0 0">4 notes &middot; 2 strangers here</p>
+    </div>
+    <span class="mini" style="--p:#ffe066;left:52%;top:24%;transform:rotate(-2deg)">you've survived every bad day</span>
+    <span class="mini" style="--p:#8ed6ff;left:70%;top:50%;transform:rotate(1.5deg)">it's okay to rest</span>
+    <span class="mini" style="--p:#ff9fb0;left:86%;top:22%;transform:rotate(-1deg)">drink water</span>
+  </div>
+</section>
+<div class="cap"><p class="n">d3</p><p>A permanent rail on the left holds the name, the two actions and the live count; the wall runs beside it. Best for explaining the project to newcomers, but it <b>permanently eats a third of the wall</b> and feels more like an app.</p></div>
+
+<p class="foot">stick with me &middot; editor, pad &amp; front-door study &middot; all notes placeholder &middot; mixing encouraged</p>
+
+</body>
+</html>
