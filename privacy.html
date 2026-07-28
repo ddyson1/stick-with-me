@@ -41,7 +41,7 @@
 
     <h2>What is stored about you, briefly</h2>
     <ul>
-      <li><strong>A one-way hash of your IP address.</strong> To enforce &ldquo;one note per hour&rdquo; and to stop flooding, the engine keeps a SHA-256 hash of your IP with a timestamp. The hash cannot be reversed into your address by us, and it is not attached to your note. It is discarded once the hour has passed.</li>
+      <li><strong>A one-way hash of your IP address.</strong> To enforce &ldquo;one note every half hour&rdquo; and to stop flooding, the engine keeps a SHA-256 hash of your IP with a timestamp. The hash cannot be reversed into your address by us, and it is not attached to your note. It is discarded once the half hour has passed.</li>
       <li><strong>A random session id</strong> while your browser is connected, so live typing reaches other people watching. It disappears when you close the tab.</li>
       <li><strong>A peel token</strong> for fifteen minutes after you stick a note, so your browser — and only your browser — can take that note back. We store only a hash of it.</li>
     </ul>

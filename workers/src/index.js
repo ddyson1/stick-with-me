@@ -4,15 +4,15 @@
  * One Durable Object per wall. Unlike a notebook, a wall is parallel:
  * any stranger can pull a blank sticky and write, several at once, each
  * note glowing while its author types. Two quiet minutes — or "stick it"
- * — sets a note. A full wall (96 notes) is archived; a fresh one begins.
+ * — sets a note. The wall is endless; it does not fill.
  *
  * WS protocol (JSON):
  *   s→c: state{you,notes,drafts,presence,cap,killed,full}, presence{count},
  *        draft{gid,text,color,x,y}, gone{gid}, ink{note}, deny{reason}
  *   c→s: start{x,y}, write{text}, sign{name}, release
  *
- * Notes carry x/y (fractions of the wall surface) — strangers place
- * their own sticky where they want it.
+ * Notes carry x/y in world coordinates — strangers place their own
+ * sticky wherever they want it.
  */
 
 import { DurableObject } from 'cloudflare:workers';
@@ -36,7 +36,7 @@ const PEEL_WINDOW_MS = 15 * 60 * 1000;    /* change your mind, briefly */
 const INK_IDLE_MS = 2 * 60 * 1000;
 const EMPTY_DRAFT_MS = 90 * 1000;
 const ALARM_TICK_MS = 30 * 1000;
-const INK_COOLDOWN_MS = 60 * 60 * 1000;   /* one inked note per ip-hash per hour */
+const INK_COOLDOWN_MS = 30 * 60 * 1000;   /* one inked note per ip-hash per half hour */
 
 const J = { 'content-type': 'application/json' };
 
@@ -219,7 +219,7 @@ export class Wall extends DurableObject {
     const log = (await this.ctx.storage.get('inklog')) || {};
     if (log[att.iph] && Date.now() - log[att.iph] < INK_COOLDOWN_MS) {
       const mins = Math.max(1, Math.ceil((INK_COOLDOWN_MS - (Date.now() - log[att.iph])) / 60000));
-      return ws.send(JSON.stringify({ t: 'deny', reason: 'one note an hour — yours can return in ' + mins + ' min.' }));
+      return ws.send(JSON.stringify({ t: 'deny', reason: 'one note every half hour — yours can return in ' + mins + ' min.' }));
     }
     /* the sheet you pulled off the pad decides the paper */
     const color = (msg && COLORS.includes(msg.color))

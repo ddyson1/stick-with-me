@@ -845,7 +845,7 @@
         if (out.ok) {
           delete peels[id]; savePeels();
           st.notes = st.notes.filter(function (n) { return n.id !== id; });
-          say('peeled — the hour is yours again.');
+          say('peeled — your next note is free again.');
           /* let it curl off the wall before the list catches up */
           if (noteEl) {
             noteEl.classList.add('peeling');
