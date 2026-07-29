@@ -596,12 +596,18 @@ body {
   display: block; font-weight: 700; font-size: 22px; margin-bottom: 9px;
 }
 .note.welcome .wline { margin: 0 0 9px; font-size: 16px; line-height: 1.4; }
-.note.welcome .wacts { margin: 13px 0 0; font-size: 15px; }
-.note.welcome .wacts a {
-  color: var(--blue-deep); text-decoration: none;
-  border-bottom: 1px solid rgba(58, 85, 196, 0.35);
+/* the creed — the largest words on the note after its name */
+.note.welcome .wcreed {
+  margin: 4px 0 14px;
+  font-size: 19px; line-height: 1.35;
+  color: #2c2d30;
 }
-.note.welcome .wacts a:hover { border-bottom-color: var(--blue-deep); }
+/* how it works, said once, quietly */
+.note.welcome .whow {
+  margin: 14px 0 0;
+  font-size: 13.5px; line-height: 1.55;
+  color: rgba(44, 45, 48, 0.45);
+}
 .note.welcome .wfoot {
   margin: 14px 0 0; font-size: 14px; color: rgba(44, 45, 48, 0.5);
 }

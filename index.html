@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>stick with me</title>
-  <meta name="description" content="An endless wall of support from strangers, for strangers. Take what you need; leave what you can.">
+  <meta name="description" content="Take what you need. Leave what you can. An endless wall of notes strangers wrote for strangers — one of them might be for you.">
 
   <meta property="og:title" content="stick with me">
-  <meta property="og:description" content="An endless wall of support from strangers, for strangers. Take what you need; leave what you can.">
+  <meta property="og:description" content="Take what you need. Leave what you can. Strangers wrote these for strangers — one of them might be for you.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://stick-with-me.com">
 
@@ -261,10 +261,15 @@
           if (py < miny) miny = py; if (py > maxy) maxy = py;
         });
         var r = wallEl.getBoundingClientRect();
-        var spanX = (maxx - minx) + 700, spanY = (maxy - miny) + 700;
         hx = sx / pts.length;
         hy = sy / pts.length;
-        hz = Math.min(1.1, Math.max(ZMIN, Math.min(r.width / spanX, r.height / spanY)));
+        if (r.width < 50 || r.height < 50) {
+          hz = 1;                    /* measured before layout — don't guess */
+        } else {
+          var spanX = (maxx - minx) + 420, spanY = (maxy - miny) + 420;
+          /* never open so far out that the words can't be read */
+          hz = Math.min(1.1, Math.max(0.62, Math.min(r.width / spanX, r.height / spanY)));
+        }
       }
       if (animate) { tgt.x = hx; tgt.y = hy; tgt.z = hz; kick(); }
       else jumpTo(hx, hy, hz);
@@ -747,22 +752,22 @@
       place(d, 0, 0, 'welcome');
 
       d.appendChild(el('span', 'wtitle', 'stick with me'));
-      d.appendChild(el('p', 'wline', 'a wall of support from strangers, for strangers.'));
-      d.appendChild(el('p', 'wline', 'someone will read what you leave here on a day you will never know about. that is the whole idea.'));
 
-      var acts = el('p', 'wacts');
-      var a1 = el('a', null, 'take what you need');
-      a1.href = '#'; a1.title = 'a note from the wall, for you';
-      a1.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-      a1.addEventListener('click', function (e) { e.preventDefault(); takeOne(); });
-      var a2 = el('a', null, 'leave what you can');
-      a2.href = '#'; a2.title = 'or pull a sheet from the pad';
-      a2.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
-      a2.addEventListener('click', function (e) { e.preventDefault(); leaveOne(); });
-      acts.appendChild(a1);
-      acts.appendChild(document.createTextNode(' · '));
-      acts.appendChild(a2);
-      d.appendChild(acts);
+      /* the idea, stated plainly — not a control. The wall's own objects
+         are the controls: a note to click, a pad to pull from. */
+      var creed = el('p', 'wcreed');
+      creed.appendChild(document.createTextNode('take what you need.'));
+      creed.appendChild(document.createElement('br'));
+      creed.appendChild(document.createTextNode('leave what you can.'));
+      d.appendChild(creed);
+
+      d.appendChild(el('p', 'wline', 'strangers wrote these for strangers. one of them might be for you.'));
+
+      var how = el('p', 'whow');
+      how.appendChild(el('span', null, 'tap any note to read it'));
+      how.appendChild(document.createElement('br'));
+      how.appendChild(el('span', null, 'pull a sheet from the pad to write one'));
+      d.appendChild(how);
 
       d.appendChild(el('p', 'wfoot', 'be gentle. someone here is having a hard day.'));
       return d;
